@@ -1,0 +1,6 @@
+==============================================
+데이터 무결성 검사 시작 2025-08-25T18:29:18.033625
+addresses=6970, lines=7132
+[Addresses] dupId=0, dupNameKeys=0, dupPosKeys=2
+[Lines] dupId=641, overlaps=0
+highlyConnected(>=4)=9

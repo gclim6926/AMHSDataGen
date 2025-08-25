@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Viewer</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+        html, body { height: 100%; margin: 0; }
+        #plot { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+<div id="plot"></div>
+<script>
+(async function () {
+  try {
+    const params = new URLSearchParams(location.search);
+    const layerParam = params.get('layers');
+    const overlap = params.get('overlap') === '1';
+    const compsParam = (params.get('comps')||'');
+    const selectedComps = compsParam ? compsParam.split(',').filter(Boolean) : [];
+    const res = await fetch('/api/get-output-json');
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message || 'failed to load output.json');
+    const data = json.data || {};
+    const addresses = (data.addresses || []);
+    const lines = (data.lines || []);
+    const stations = (data.stations || []);
+
+    // Lines grouped by color (by z)
+    const lineGroups = {};
+    function colorByZ(z) {
+      if (z === 6022.0) return '#ff4444';
+      if (z === 4822.0) return '#4444ff';
+      if (z === 0.0) return '#ffff44';
+      return '#888888';
+    }
+    const selectedLayers = (layerParam ? layerParam.split(',') : []);
+    const zOf = { z6022: 6022.0, z4822: 4822.0, z0: 0.0 };
+    function layerMatches(pos){
+      if (!selectedLayers.length) return true;
+      const z = pos && typeof pos.z==='number' ? pos.z : undefined;
+      const needed = selectedLayers.map(l=>zOf[l]).filter(v=>typeof v==='number');
+      return needed.includes(z);
+    }
+
+    for (const l of lines) {
+      if (!l.fromPos || !l.toPos) continue;
+      if (!overlap) {
+        if (!layerMatches(l.fromPos) || !layerMatches(l.toPos)) continue;
+      } else {
+        if (selectedLayers.length && !(layerMatches(l.fromPos) && layerMatches(l.toPos))) continue;
+      }
+      const z1 = l.fromPos.z, z2 = l.toPos.z;
+      const color = (z1 === 6022.0 || z2 === 6022.0) ? '#ff4444' : (z1 === 4822.0 || z2 === 4822.0) ? '#4444ff' : (z1 === 0.0 || z2 === 0.0) ? '#ffff44' : '#44ff44';
+      if (!lineGroups[color]) lineGroups[color] = { x: [], y: [], color };
+      lineGroups[color].x.push(l.fromPos.x, l.toPos.x, null);
+      lineGroups[color].y.push(l.fromPos.y, l.toPos.y, null);
+    }
+
+    const traces = [];
+    for (const color in lineGroups) {
+      const g = lineGroups[color];
+      if (!selectedComps.length || selectedComps.includes('lines')) {
+        traces.push({
+          type: 'scattergl', mode: 'lines', x: g.x, y: g.y,
+          line: { color: g.color, width: 1 }, hoverinfo: 'skip', name: 'lines'
+        });
+      }
+    }
+
+    // Addresses
+    const ax = [], ay = [], acolor = [], atext = [];
+    for (const a of addresses) {
+      if (!a.pos) continue;
+      if (selectedLayers.length && !layerMatches(a.pos)) continue;
+      ax.push(a.pos.x); ay.push(a.pos.y); acolor.push(colorByZ(a.pos.z)); atext.push(String(a.id));
+    }
+    if (!selectedComps.length || selectedComps.includes('addresses')) {
+      traces.push({ type: 'scattergl', mode: 'markers', x: ax, y: ay, marker: { size: 3, color: acolor }, text: atext, name: 'addresses' });
+    }
+
+    // Stations
+    if (!selectedComps.length || selectedComps.includes('stations')) {
+      const sx = [], sy = [], stext = [];
+      for (const s of stations) {
+        if (!s.pos) continue;
+        if (selectedLayers.length && !layerMatches(s.pos)) continue;
+        sx.push(s.pos.x); sy.push(s.pos.y); stext.push(String(s.id));
+      }
+      if (sx.length) {
+        traces.push({ type: 'scattergl', mode: 'markers', x: sx, y: sy,
+          marker: { size: 4, color: '#FFD700', symbol: 'diamond' }, text: stext, name: 'stations' });
+      }
+    }
+
+    // OHTs animation (if selected) - OHT_ID 별로 분리
+    if (!selectedComps.length || selectedComps.includes('ohts')) {
+      try {
+        const logRes = await fetch('/api/get-udp-log');
+        const logJson = await logRes.json();
+        if (logJson.success && Array.isArray(logJson.lines) && logJson.lines.length) {
+          const squareTime = /^\s*\[([^\]]+)\]/;
+          const currZeroNext = /,\s*(\d{5,})\s*,\s*0\s*,\s*\d{5,}\s*,/;
+          const mcpOht = /Message\s*=\s*\d+\s*,\s*(OHT\d+)\s*,/i; // "Message=2,OHT1,"
+          const legacyTime = /Time\s*:\s*([^,]+)/;
+          const legacyCurr = /Current Address\s*:\s*(\d+)/;
+          const entries = [];
+          for (const line of logJson.lines) {
+            let timeStr = null, currAddr = null, m;
+            if ((m = squareTime.exec(line))) timeStr = m[1].trim();
+            if ((m = currZeroNext.exec(line))) currAddr = parseInt(m[1]);
+            let ohtTag = null; if ((m = mcpOht.exec(line))) ohtTag = m[1].toUpperCase();
+            if (!timeStr && (m = legacyTime.exec(line))) timeStr = m[1].trim();
+            if (currAddr == null && (m = legacyCurr.exec(line))) currAddr = parseInt(m[1]);
+            if (timeStr && currAddr != null && ohtTag) entries.push([timeStr, currAddr, ohtTag]);
+          }
+          const addrMap = new Map();
+          for (const a of addresses) { if (a && a.address != null && a.pos) addrMap.set(parseInt(a.address), [a.pos.x, a.pos.y, a.pos.z]); }
+          // OHT별 그룹화
+          const ohtToPos = new Map();
+          for (const [_, code, tag] of entries) {
+            const p = addrMap.get(code); if (!p) continue;
+            if (layerParam) {
+              const zOf = { z6022: 6022.0, z4822: 4822.0, z0: 0.0 };
+              const selectedZ = layerParam.split(',').map(l=>zOf[l]).filter(v=>typeof v==='number');
+              if (selectedZ.length && !selectedZ.includes(p[2])) continue;
+            }
+            if (!ohtToPos.has(tag)) ohtToPos.set(tag, []);
+            ohtToPos.get(tag).push([p[0], p[1]]);
+          }
+          // 각 OHT마다 별도 trace와 애니메이션
+          const colors = ['#00FFFF', '#00FF7F', '#FF00FF', '#FFA500', '#00BFFF', '#ADFF2F', '#FF69B4', '#8A2BE2', '#FF4500', '#2E8B57'];
+          let colorIdx = 0;
+          const ohtTraceIndices = [];
+          const ohtPaths = [];
+          for (const [tag, plist] of ohtToPos.entries()) {
+            if (!plist.length) continue;
+            const MAX = 1500; let pos = plist; if (pos.length > MAX) { const step = Math.ceil(pos.length / MAX); pos = pos.filter((_,i)=> i%step===0); }
+            const x=[pos[0][0]], y=[pos[0][1]];
+            const color = colors[colorIdx++ % colors.length];
+            traces.push({ type:'scattergl', mode:'markers', x, y, marker:{ size:8, color }, hoverinfo:'skip', name: tag });
+            ohtTraceIndices.push(traces.length - 1);
+            ohtPaths.push(pos);
+          }
+          if (ohtTraceIndices.length) {
+            let frame = 0;
+            const intervalMs = 100;
+            function tick() {
+              const xs = [], ys = [];
+              for (let t = 0; t < ohtTraceIndices.length; t++) {
+                const pos = ohtPaths[t];
+                const p = pos[frame % pos.length];
+                xs.push([p[0]]);
+                ys.push([p[1]]);
+              }
+              Plotly.restyle('plot', { x: xs, y: ys }, ohtTraceIndices);
+              frame++;
+              setTimeout(()=> requestAnimationFrame(tick), intervalMs);
+            }
+            requestAnimationFrame(tick);
+          }
+        }
+      } catch(e) { /* ignore */ }
+    }
+
+    // 전체 데이터 범위로 고정 축 계산 (autorange 방지)
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    if (ax.length) {
+      for (let i=0;i<ax.length;i++){ if (ax[i]<minX) minX=ax[i]; if (ax[i]>maxX) maxX=ax[i]; if (ay[i]<minY) minY=ay[i]; if (ay[i]>maxY) maxY=ay[i]; }
+    } else {
+      for (const color in lineGroups) {
+        const g = lineGroups[color];
+        for (const vx of g.x){ if (vx==null) continue; if (vx<minX) minX=vx; if (vx>maxX) maxX=vx; }
+        for (const vy of g.y){ if (vy==null) continue; if (vy<minY) minY=vy; if (vy>maxY) maxY=vy; }
+      }
+    }
+    if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY)) { minX=-10; maxX=10; minY=-10; maxY=10; }
+    const pad = 50;
+    const layout = {
+      title: '2D Layout Viewer', hovermode: 'closest', plot_bgcolor: 'white', paper_bgcolor: 'white',
+      xaxis: { title: 'X', showgrid: true, gridcolor: 'lightgray', autorange: false, range: [minX - pad, maxX + pad] },
+      yaxis: { title: 'Y', showgrid: true, gridcolor: 'lightgray', autorange: false, range: [minY - pad, maxY + pad] },
+      uirevision: 'oht2d'
+    };
+    Plotly.newPlot('plot', traces, layout, {responsive: true});
+  } catch (e) {
+    document.getElementById('plot').innerHTML = '<p style="padding:16px">오류: ' + (e.message || e) + '</p>';
+  }
+})();
+</script>
+</body>
+</html>
+
+
