@@ -1,93 +1,111 @@
-# layout-visualizer
+# layout_visualizer
 
+Spring Boot 기반 레이아웃 시각화/데이터 생성 도구. 기존 Python 스크립트의 기능을 Java(Spring MVC) + Thymeleaf + Plotly.js로 이식/확장했습니다.
 
+## 주요 기능
+- Layout Seed: `data/input.json` 확인/수정
+- add Addresses/Lines: 주소·라인 자동 생성 및 연결
+- Checker: 중복/겹침 라인 점검 및 정리, 레이아웃 저장
+- add Stations: 라인 구간을 분할해 스테이션 생성
+- OHT Track Maker: 다중 OHT 경로(UDP 트랙) 동시 생성
+- 2D/3D Viewer: Plotly.js로 레이아웃 및 OHT 시뮬레이션 시각화
 
-## Getting started
+## 빠른 시작
+- 요구사항: JDK 17+, Gradle Wrapper 포함
+- 실행
+  - 개발 실행: `./gradlew bootRun`
+  - 빌드: `./gradlew build -x test`
+  - 접속: 브라우저에서 `http://localhost:8080/`
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+## 디렉토리 구조(요약)
 ```
-cd existing_repo
-git remote add origin https://gitlab.tde.sktelecom.com/DTDB/backend/fontus-hub/layout-visualizer.git
-git branch -M main
-git push -uf origin main
+layout_visualizer/
+  ├─ src/main/java/demo/layout_visualizer
+  │   ├─ controller/  # MVC Controller 및 REST API 엔드포인트
+  │   ├─ model/       # 데이터 모델(POJO) - Address, Line, Position 등
+  │   ├─ service/     # 비즈니스 로직 - Generator·Checker·Stations·UDP 등
+  │   └─ LayoutVisualizerApplication.java
+  ├─ src/main/resources
+  │   ├─ templates/   # Thymeleaf 템플릿 (index, viewer2d, viewer3d, 404 등)
+  │   ├─ static/      # JS/CSS(예: static/js/actions.js)
+  │   └─ application.properties
+  ├─ data/            # 변경/결과 데이터 및 로그: input.json, output.json, layout.json, *.log
+  ├─ build.gradle
+  └─ README.md
 ```
 
-## Integrate with your tools
+## 설정(application.properties)
+- `spring.application.name=layout_visualizer`
+- `app.data.dir=data`
+- `app.files.input=input.json`
+- `app.files.output=output.json`
+- `app.files.input-sample=input.sample.json`
+- `app.files.check-log=check.log`
+- `app.files.udp-log=output_oht_track_data.log`
+- `app.files.layout=layout.json`
 
-- [ ] [Set up project integrations](https://gitlab.tde.sktelecom.com/DTDB/backend/fontus-hub/layout-visualizer/-/settings/integrations)
+모든 파일은 기본적으로 프로젝트 루트의 `data/` 하위에 생성·갱신됩니다.
 
-## Collaborate with your team
+## 실행 방법(웹 UI)
+- 메인: `http://localhost:8080/`
+  - 좌측 메뉴에서 각 기능 실행
+  - 2D/3D Viewer는 새 창으로 열리며, Layer/Component 필터 적용 가능
+- 2D Viewer: `/viewer2d?layers=z6022,z4822&overlap=1&comps=lines,addresses,stations,ohts`
+- 3D Viewer: `/viewer3d?layers=z6022,z4822&overlap=1&primary=z4822&comps=lines,addresses,stations,ohts`
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## REST API(요약)
+- `POST /api/run-generate` — 주소/라인 생성
+- `POST /api/run-add-lines` — 미연결 주소/엔드포인트 연결
+- `POST /api/run-check` — 데이터 무결성 점검 및 정리
+- `POST /api/run-stations` — 스테이션 생성
+- `POST /api/run-udp-generator` — 단일 OHT 트랙 생성
+- `POST /api/run-udp-generator-bulk` — 다중 OHT 트랙 동시 생성
+- `GET  /api/get-input-data` — 입력(json) 조회
+- `POST /api/update-input-json` — 입력(json) 갱신
+- `GET  /api/get-output-json` — 출력(json) 조회
+- `GET  /api/get-udp-log` — OHT 트랙 로그 조회
 
-## Test and Deploy
+## OHT Track Maker
+- UI: 메뉴의 “OHT Track Maker” → OHT_0 ~ OHT_9 기본값 제공
+- 체크된 OHT만 대상으로, 모든 OHT가 같은 틱에서 동시에 다음 주소로 이동하는 로그를 생성합니다.
+- 로그 파일: `data/output_oht_track_data.log`
+- 로그 포맷 예시(각 라인의 MCP/OHT 표기):
+  ```
+  [2025-08-25 18:02:34.828]IP:10.10.10.1, Port=3600, Descrption:DT, Message=2,OHT1,V00001,1,0,0000,1,100010,0,100451,2,1,AAAA0000,100110,00000000,0000, ,0,101,0
+  ```
+  - “Message=2,OHT1,” 형태로 OHT 식별자를 기록합니다.
 
-Use the built-in continuous integration in GitLab.
+## 시각화(2D/3D)
+- Plotly.js를 사용해 브라우저에서 렌더링
+- Layer 필터: `z0`, `z4822`, `z6022` 선택, Overlap 모드 지원
+- Component 필터: `lines`, `addresses`, `stations`, `ohts`
+- OHT: 로그 기반 애니메이션, 2D/3D 각각 다른 마커 크기
+- 2D는 초기 데이터 범위로 축을 고정하여 OHT가 가장자리로 이동해도 스케일 변화가 없도록 설정
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+## 내부 로직(요약)
+- Generator: 입력(JSON)을 기반으로 주소/라인 생성, 레이어별 처리
+- Line Endpoint: 미사용 주소·엔드포인트 연결, 최근접 탐색 및 중복/교차 방지
+- Checker: 중복 주소/라인, 라인 겹침 검사 및 정리, 리포트/로그 작성
+- Stations: 라인을 구간으로 나눠 선택/배치, 스테이션 엔티티 생성 및 출력 JSON 반영
+- UDP Generator: 주소 그래프 구성 → BFS 최단 경로 → OHT 트랙 로그 생성(동시 틱)
 
-***
+## 개발 팁
+- 빌드: `./gradlew build -x test`
+- 실행: `./gradlew bootRun`
+- 로그 확인: `data/check.log`, `data/output_oht_track_data.log`
+- 데이터 초기화: 필요 시 `data/` 내 파일 교체 또는 `resources/data/input.sample.json` 사용
 
-# Editing this README
+## GitHub
+- 원격 저장소 예시(HTTPS): `https://github.com/gclim6926/layout_visualizer`
+- 최초 연결 예시:
+  ```bash
+  git init
+  git add -A && git commit -m "Initial import"
+  git branch -M main
+  git remote add origin https://github.com/gclim6926/layout_visualizer.git
+  git pull --rebase --allow-unrelated-histories origin main || true
+  git push -u origin main
+  ```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## 라이선스
+- 프로젝트에 맞는 라이선스를 선택해 `LICENSE` 파일로 추가하세요. (예: MIT)
