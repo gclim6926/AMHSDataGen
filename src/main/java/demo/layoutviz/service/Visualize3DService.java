@@ -1,4 +1,4 @@
-package demo.layout_visualizer.service;
+package demo.layoutviz.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Service;

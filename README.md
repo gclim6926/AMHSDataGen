@@ -1,4 +1,4 @@
-# layout_visualizer
+# layoutviz
 
 Spring Boot 기반 레이아웃 시각화/데이터 생성 도구. 기존 Python 스크립트의 기능을 Java(Spring MVC) + Thymeleaf + Plotly.js로 이식/확장했습니다.
 
@@ -19,8 +19,8 @@ Spring Boot 기반 레이아웃 시각화/데이터 생성 도구. 기존 Python
 
 ## 디렉토리 구조(요약)
 ```
-layout_visualizer/
-  ├─ src/main/java/demo/layout_visualizer
+layoutviz/
+  ├─ src/main/java/demo/layoutviz
   │   ├─ controller/  # MVC Controller 및 REST API 엔드포인트
   │   ├─ model/       # 데이터 모델(POJO) - Address, Line, Position 등
   │   ├─ service/     # 비즈니스 로직 - Generator·Checker·Stations·UDP 등
@@ -35,7 +35,7 @@ layout_visualizer/
 ```
 
 ## 설정(application.properties)
-- `spring.application.name=layout_visualizer`
+- `spring.application.name=layoutviz`
 - `app.data.dir=data`
 - `app.files.input=input.json`
 - `app.files.output=output.json`
@@ -96,13 +96,13 @@ layout_visualizer/
 - 데이터 초기화: 필요 시 `data/` 내 파일 교체 또는 `resources/data/input.sample.json` 사용
 
 ## GitHub
-- 원격 저장소 예시(HTTPS): `https://github.com/gclim6926/layout_visualizer`
+- 원격 저장소 예시(HTTPS): `https://github.com/gclim6926/layoutviz`
 - 최초 연결 예시:
   ```bash
   git init
   git add -A && git commit -m "Initial import"
   git branch -M main
-  git remote add origin https://github.com/gclim6926/layout_visualizer.git
+  git remote add origin https://github.com/gclim6926/layoutviz.git
   git pull --rebase --allow-unrelated-histories origin main || true
   git push -u origin main
   ```

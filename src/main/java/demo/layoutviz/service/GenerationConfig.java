@@ -1,4 +1,4 @@
-package demo.layout_visualizer.service;
+package demo.layoutviz.service;
 
 import java.nio.file.Path;
 

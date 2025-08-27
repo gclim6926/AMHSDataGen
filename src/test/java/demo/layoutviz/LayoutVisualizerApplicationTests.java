@@ -1,4 +1,4 @@
-package demo.layout_visualizer;
+package demo.layoutviz;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

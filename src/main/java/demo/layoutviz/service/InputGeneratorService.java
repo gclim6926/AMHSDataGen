@@ -1,12 +1,12 @@
-package demo.layout_visualizer.service;
+package demo.layoutviz.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import demo.layout_visualizer.model.Address;
-import demo.layout_visualizer.model.Line;
-import demo.layout_visualizer.model.Position;
+import demo.layoutviz.model.Address;
+import demo.layoutviz.model.Line;
+import demo.layoutviz.model.Position;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;

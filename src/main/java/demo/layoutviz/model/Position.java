@@ -1,4 +1,4 @@
-package demo.layout_visualizer.model;
+package demo.layoutviz.model;
 
 public class Position {
     private double x;

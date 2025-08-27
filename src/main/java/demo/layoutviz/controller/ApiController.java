@@ -1,15 +1,15 @@
-package demo.layout_visualizer.controller;
+package demo.layoutviz.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.layout_visualizer.service.DataFileService;
-import demo.layout_visualizer.service.InputGeneratorService;
-import demo.layout_visualizer.service.LineEndpointService;
-import demo.layout_visualizer.service.CheckService;
-import demo.layout_visualizer.service.StationsService;
-import demo.layout_visualizer.service.UdpGeneratorService;
-import demo.layout_visualizer.service.Visualize2DService;
-import demo.layout_visualizer.service.Visualize3DService;
+import demo.layoutviz.service.DataFileService;
+import demo.layoutviz.service.InputGeneratorService;
+import demo.layoutviz.service.LineEndpointService;
+import demo.layoutviz.service.CheckService;
+import demo.layoutviz.service.StationsService;
+import demo.layoutviz.service.UdpGeneratorService;
+import demo.layoutviz.service.Visualize2DService;
+import demo.layoutviz.service.Visualize3DService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

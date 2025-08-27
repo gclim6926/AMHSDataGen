@@ -1,4 +1,4 @@
-package demo.layout_visualizer;
+package demo.layoutviz;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
