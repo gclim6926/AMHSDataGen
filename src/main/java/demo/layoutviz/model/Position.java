@@ -1,5 +1,8 @@
 package demo.layoutviz.model;
 
+import jakarta.persistence.Embeddable;
+
+@Embeddable
 public class Position {
     private double x;
     private double y;

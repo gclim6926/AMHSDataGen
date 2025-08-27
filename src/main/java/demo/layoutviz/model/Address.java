@@ -1,9 +1,25 @@
 package demo.layoutviz.model;
 
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "addresses", indexes = {
+        @Index(name = "idx_addresses_name", columnList = "name")
+})
 public class Address {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private long address;
     private String name;
+    @Embedded
     private Position pos;
 
     public Address() {}

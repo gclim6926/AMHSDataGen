@@ -1,11 +1,41 @@
 package demo.layoutviz.model;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "lines", indexes = {
+        @Index(name = "idx_lines_name", columnList = "name"),
+        @Index(name = "idx_lines_from_to", columnList = "fromAddress,toAddress")
+})
 public class Line {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String name;
     private long fromAddress;
     private long toAddress;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "x", column = @Column(name = "from_x")),
+            @AttributeOverride(name = "y", column = @Column(name = "from_y")),
+            @AttributeOverride(name = "z", column = @Column(name = "from_z"))
+    })
     private Position fromPos;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "x", column = @Column(name = "to_x")),
+            @AttributeOverride(name = "y", column = @Column(name = "to_y")),
+            @AttributeOverride(name = "z", column = @Column(name = "to_z"))
+    })
     private Position toPos;
     private boolean curve;
 

@@ -25,9 +25,11 @@ public class InputGeneratorService {
     private final Random random = new Random();
 
     private final DataFileService dataFileService;
+    private final DbDataService dbDataService;
 
-    public InputGeneratorService(DataFileService dataFileService) {
+    public InputGeneratorService(DataFileService dataFileService, DbDataService dbDataService) {
         this.dataFileService = dataFileService;
+        this.dbDataService = dbDataService;
     }
 
     public Result runGenerate() throws IOException {
@@ -51,7 +53,7 @@ public class InputGeneratorService {
         addressId = processLayer(root.path("z4822"), 4822.0, addresses, lines, addressId, lineId);
         lineId = GenerationConfig.LINE_ID_START + lines.size();
 
-        // Save output
+        // Save output (file)
         ObjectNode output = objectMapper.createObjectNode();
         ArrayNode addressesNode = output.putArray("addresses");
         for (Address a : addresses) {
@@ -83,6 +85,9 @@ public class InputGeneratorService {
         }
 
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputPath.toFile(), output);
+
+        // Save to DB (H2)
+        dbDataService.saveAddressesAndLines(addresses, lines);
 
         Result res = new Result();
         res.addressCount = addresses.size();
