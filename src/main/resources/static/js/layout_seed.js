@@ -4,13 +4,13 @@ async function runLayoutSeed() {
         const response = await fetch('/api/get-input-data');
         const result = await response.json();
         if (result.success) {
-            showStatus('input.json 데이터를 성공적으로 로드했습니다.', 'success');
+            showStatus('샘플 데이터를 성공적으로 로드했습니다.', 'success');
             displayInputForm(result.data);
         } else {
-            showStatus('input.json 데이터 로드 실패: ' + result.message, 'error');
+            showStatus('샘플 데이터 로드 실패: ' + result.message, 'error');
         }
     } catch (error) {
-        showStatus(`input.json 데이터 로드 중 오류가 발생했습니다: ${error.message}`, 'error');
+        showStatus(`샘플 데이터 로드 중 오류가 발생했습니다: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }
@@ -21,11 +21,11 @@ function displayInputForm(inputData) {
     const container = document.createElement('div');
     container.className = 'execution-result';
     const title = document.createElement('h3');
-    title.textContent = '🔧 Layout Seed - input.json 편집';
+    title.textContent = '🔧 Layout Seed - 샘플 기반 편집';
     container.appendChild(title);
     const description = document.createElement('p');
-    description.textContent = 'Spine layout Design을 위한 좌표 입력\n' +
-        '아래 폼에서 input.json의 모든 값을 수정할 수 있습니다. 수정 후 "Update input.json" 버튼을 클릭하세요.';
+    description.textContent = 'AMHS(Automated Material Handling System) 설계의 대표적인 Spine Layout Design을 위한 좌표를 입력하세요.\n' +
+        '초기 값은 input.sample.json이며, 저장 시 DB에 반영합니다. "Save to DB" 버튼을 클릭하세요.';
     container.appendChild(description);
     const form = document.createElement('form');
     form.id = 'inputForm';
@@ -69,7 +69,7 @@ function displayInputForm(inputData) {
     const submitButton = document.createElement('button');
     submitButton.type = 'submit';
     submitButton.className = 'update-btn';
-    submitButton.textContent = 'Update input.json';
+    submitButton.textContent = 'Save to DB';
     actionsDiv.appendChild(submitButton);
     form.appendChild(actionsDiv);
     container.appendChild(form);
@@ -102,10 +102,10 @@ async function updateInputJson(event) {
             body: JSON.stringify(inputData)
         });
         const result = await response.json();
-        if (result.success) showStatus('✅ input.json이 성공적으로 업데이트되었습니다.', 'success');
-        else showStatus('❌ input.json 업데이트 실패: ' + result.message, 'error');
+        if (result.success) showStatus('✅ DB에 성공적으로 저장되었습니다.', 'success');
+        else showStatus('❌ DB 저장 실패: ' + result.message, 'error');
     } catch (error) {
-        showStatus(`input.json 업데이트 중 오류가 발생했습니다: ${error.message}`, 'error');
+        showStatus(`DB 저장 중 오류가 발생했습니다: ${error.message}`, 'error');
     } finally { hideLoading(); }
 }
 

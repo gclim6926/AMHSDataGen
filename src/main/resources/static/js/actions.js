@@ -66,14 +66,6 @@ async function runStationsPy() {
                     <div class="execution-result">
                         <h3>🚀 add Stations 실행 결과</h3>
                         <div class="result-section">
-                            <h4>📊 실행 정보</h4>
-                            <div class="config-info">
-                                <p><strong>스크립트:</strong> ${result.config_updated.script}</p>
-                                <p><strong>상태:</strong> ${result.config_updated.status}</p>
-                                <p><strong>실행 방법:</strong> ${result.config_updated.method}</p>
-                            </div>
-                        </div>
-                        <div class="result-section">
                             <h4>📝 터미널 출력</h4>
                             <div class="terminal-output"><pre>${result.execution_output.terminal_logs || '출력 없음'}</pre></div>
                         </div>
@@ -137,7 +129,7 @@ function showUDPGeneratorForm() {
                   </tbody>
                 </table>
                 <div class="form-actions">
-                    <button type="submit" class="update-btn">OHT Track 생성</button>
+                    <button type="submit" class="update-btn">update to DB</button>
                 </div>
             </form>
         </div>`;
@@ -187,9 +179,6 @@ async function runUDPGenerator(event) {
                     <h4>📊 요약</h4>
                     <div class="terminal-output"><pre>${bulkResult.success ? (bulkResult.execution_output.terminal_logs||'완료') : ('실패: ' + bulkResult.message)}</pre></div>
                 </div>
-                <div class="form-actions">
-                    <button onclick="showUDPGeneratorForm()" class="update-btn">새로운 OHT Track 생성</button>
-                </div>
             </div>`;
         resultArea.innerHTML = outputHTML;
     } catch (error) {
@@ -203,13 +192,6 @@ function displayExecutionOutput(viewerName, executionOutput, configUpdated) {
     let outputHTML = `
         <div class="execution-result">
             <h3>🚀 ${viewerName} 실행 결과</h3>
-            <div class="result-section">
-                <h4>📊 설정 정보</h4>
-                <div class="config-info">
-                    <p><strong>선택된 레이어:</strong> ${configUpdated.selected_layers ? configUpdated.selected_layers.join(', ') : 'N/A'}</p>
-                    <p><strong>시각화 모드:</strong> ${configUpdated.visualization_mode || 'N/A'}</p>
-                </div>
-            </div>
             <div class="result-section">
                 <h4>📝 터미널 출력</h4>
                 <div class="terminal-output"><pre>${executionOutput.terminal_logs || '출력 없음'}</pre></div>
@@ -276,19 +258,125 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'check': runCheckPy(); break;
                 case 'stations': runStationsPy(); break;
                 case 'udp_generator': showUDPGeneratorForm(); break;
-                case 'equipments': showEquipmentsInfo(); break;
+                case 'extract_amhs': showExtractPanel(); break;
             }
         });
     });
 });
 
-function showEquipmentsInfo() {
-    showStatus('Equipments 정보를 표시합니다.', 'info');
-    document.getElementById('resultArea').innerHTML = `
-        <h3>Equipments 정보</h3>
-        <p>Equipments는 레이아웃의 장비들을 나타냅니다.</p>
-        <p>현재는 기본적인 정보만 표시됩니다.</p>
-        <p>더 자세한 정보를 보려면 "add Addresses" 메뉴를 선택하세요.</p>`;
+async function runExtractAMHS() {
+    try {
+        showLoading();
+        const res = await fetch('/api/extract-amhs-data', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const result = await res.json();
+        hideLoading();
+        if (result.success) {
+            showStatus('✅ AMHS_data 추출이 완료되었습니다.', 'success');
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `
+                <div class="execution-result">
+                    <h3>📦 Extract 결과</h3>
+                    <div class="result-section">
+                        <h4>파일 경로</h4>
+                        <div class="detail-info">
+                            <p><strong>input.json:</strong> ${result.input_path}</p>
+                            <p><strong>output.json:</strong> ${result.output_path}</p>
+                        </div>
+                    </div>
+                </div>`;
+        } else {
+            showStatus('❌ AMHS_data 추출 실패: ' + result.message, 'error');
+        }
+    } catch (e) {
+        hideLoading();
+        showStatus('❌ AMHS_data 추출 중 오류: ' + e.message, 'error');
+    }
+}
+
+async function runDownloadAMHS() {
+    try {
+        showStatus('AMHS_data 압축 생성 중...', 'info');
+        const a = document.createElement('a');
+        a.href = '/api/download-amhs-data';
+        a.download = 'amhs_data.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showStatus('✅ amhs_data.zip 다운로드를 시작했습니다.', 'success');
+        const resultArea = document.getElementById('resultArea');
+        resultArea.innerHTML = `
+            <div class="execution-result">
+                <h3>📦 AMHS_data 다운로드</h3>
+                <p>브라우저가 <code>amhs_data.zip</code> 다운로드를 시작했습니다.</p>
+            </div>`;
+    } catch (e) {
+        showStatus('❌ AMHS_data 다운로드 중 오류: ' + e.message, 'error');
+    }
+}
+
+function showExtractPanel() {
+    const resultArea = document.getElementById('resultArea');
+    resultArea.innerHTML = `
+        <div class="execution-result">
+            <h3>📦 extract DATA</h3>
+            <p>다운로드할 항목을 선택하세요.</p>
+            <form id="extractForm" onsubmit="submitExtract(event)">
+                <label style="display:block;margin:6px 0;"><input type="checkbox" name="input" checked> layout_input.json</label>
+                <label style="display:block;margin:6px 0;"><input type="checkbox" name="output" checked> layout_output.json</label>
+                <label style="display:block;margin:6px 0;"><input type="checkbox" name="oht_log"> oht_track_data.log</label>
+                <div class="form-actions">
+                    <button type="submit" class="update-btn">extract DATA</button>
+                    <button type="button" class="update-btn" style="background:#17a2b8;" onclick="openH2Console()">h2 Console</button>
+                    <button type="button" class="update-btn" style="background:#dc3545;" onclick="resetDb()">DB reset</button>
+                </div>
+            </form>
+        </div>`;
+}
+
+async function submitExtract(e) {
+    e.preventDefault();
+    try {
+        showStatus('선택 항목 압축 생성 중...', 'info');
+        const form = document.getElementById('extractForm');
+        const payload = {
+            input: form.querySelector('input[name="input"]').checked,
+            output: form.querySelector('input[name="output"]').checked,
+            oht_log: form.querySelector('input[name="oht_log"]').checked
+        };
+        const res = await fetch('/api/download-selected', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        if (!res.ok) { throw new Error('서버 오류(' + res.status + ')'); }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'selected_data.zip'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showStatus('✅ selected_data.zip 다운로드를 시작했습니다.', 'success');
+    } catch (err) {
+        showStatus('❌ 추출 중 오류: ' + err.message, 'error');
+    }
+}
+
+function openH2Console() {
+    try {
+        window.open('/h2-console','_blank');
+        showStatus('H2 Console을 새 창에서 열었습니다.', 'info');
+    } catch (e) {
+        showStatus('❌ H2 Console 열기 실패: ' + e.message, 'error');
+    }
+}
+
+async function resetDb() {
+    try {
+        if (!confirm('DB의 모든 데이터를 삭제하고 초기화합니다. 계속하시겠습니까?')) return;
+        showStatus('DB 리셋 중...', 'info');
+        const res = await fetch('/api/reset-db', { method: 'POST' });
+        const result = await res.json();
+        if (result.success) showStatus('✅ DB가 초기화되었습니다.', 'success');
+        else showStatus('❌ DB 초기화 실패: ' + (result.message||'unknown'), 'error');
+    } catch (e) {
+        showStatus('❌ DB 초기화 중 오류: ' + e.message, 'error');
+    }
 }
 
 
