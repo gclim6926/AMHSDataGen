@@ -112,14 +112,14 @@ AMHSDataGen/
 
 - 원격 저장소(HTTPS): `https://github.com/gclim6926/AMHSDataGen.git`
 - 연결/푸시 예시:
-  
-  ```bash
-  git init
-  git add -A && git commit -m "Initial import"
-  git branch -M main
-  git remote add origin https://github.com/gclim6926/AMHSDataGen.git
-  git push -u origin main
-  ```
+
+```bash
+git init
+git add -A && git commit -m "Initial import"
+git branch -M main
+git remote add origin https://github.com/gclim6926/AMHSDataGen.git
+git push -u origin main
+```
 
 ## 라이선스
 
