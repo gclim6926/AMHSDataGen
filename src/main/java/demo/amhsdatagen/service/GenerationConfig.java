@@ -47,5 +47,3 @@ public final class GenerationConfig {
         return projectRoot.resolve("copy_layout");
     }
 }
-
-

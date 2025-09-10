@@ -19,8 +19,8 @@ public class CheckService {
         this.configService = configService;
     }
 
-    public Result runCheck() throws IOException {
-        JsonNode root = configService.loadOutputFromDb().orElseThrow(() -> new IOException("output not found in DB"));
+    public Result runCheck(String userId) throws IOException {
+        JsonNode root = configService.loadOutputFromDb(userId).orElseThrow(() -> new IOException("output not found in DB"));
         ArrayNode addressesNode = safeArray(root.path("addresses"));
         ArrayNode linesNode = safeArray(root.path("lines"));
 
@@ -94,14 +94,20 @@ public class CheckService {
         log.append("highlyConnected(>=4)=").append(highly).append("\n");
 
         // 결과를 DB에 저장
-        configService.saveOutputToDb(root);
+        configService.saveOutputToDb(userId, root);
 
+        // stations 검사 수 계산
+        ArrayNode stationsNode = safeArray(root.path("stations"));
+        
         Result r = new Result();
         r.status = "OK";
         r.summary = String.format("addrDup=%d, nameDupKeys=%d, posDupKeys=%d, lineDup=%d, overlapsRemoved=%d, highly>=4=%d",
                 dupAddrIds.size(), dupName, dupPos, dupLineIds.size(), overlapIndexes.size(), highly);
         r.logText = log.toString();
-        r.layoutPath = "db://AMHS_data:layout_seed.output";
+        r.layoutPath = "db://" + userId + "_amhs_data:layout_seed.output";
+        r.addressCount = addressesNode.size();
+        r.lineCount = linesNode.size();
+        r.stationCount = stationsNode.size();
         return r;
     }
 
@@ -142,6 +148,9 @@ public class CheckService {
         public String summary;
         public String logText;
         public String layoutPath;
+        public int addressCount;
+        public int lineCount;
+        public int stationCount;
     }
 }
 

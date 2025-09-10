@@ -23,26 +23,38 @@ public class StationsService {
         this.configService = configService;
     }
 
-    public Result runAddStations() throws IOException {
-        JsonNode input = configService.loadInputFromDb().orElseThrow(() -> new IOException("input not found in DB"));
-        JsonNode output = configService.loadOutputFromDb().orElseThrow(() -> new IOException("output not found in DB"));
+    public Result runAddStations(String userId) throws IOException {
+        System.out.println("🚀 Starting Station Generation Process...");
+        System.out.println("📋 User ID: " + userId);
+        System.out.println("⏰ Process started at: " + java.time.LocalDateTime.now());
+        
+        System.out.println("📂 Loading input and output data from database...");
+        JsonNode input = configService.loadInputFromDb(userId).orElseThrow(() -> new IOException("input not found in DB"));
+        JsonNode output = configService.loadOutputFromDb(userId).orElseThrow(() -> new IOException("output not found in DB"));
+        System.out.println("✅ Data loaded successfully");
 
         // 1) IntraBay candidates from local_loop of z6022 and z4822
+        System.out.println("🔍 Extracting station boundaries from local loops...");
         List<double[]> boundaries = new ArrayList<>(); // each as [x1,y1,z1,x2,y2,z2]
         extractBoundaries(input.path("z6022").path("local_loop"), 6022.0, boundaries);
         extractBoundaries(input.path("z4822").path("local_loop"), 4822.0, boundaries);
+        System.out.println("✅ Found " + boundaries.size() + " potential station boundaries");
 
         // 2) Randomly select EQUIPMENTS boundaries
+        System.out.println("🎲 Selecting " + GenerationConfig.EQUIPMENTS + " equipment boundaries...");
         if (boundaries.size() < GenerationConfig.EQUIPMENTS) {
             throw new IOException("Not enough station boundaries: " + boundaries.size() + " < EQUIPMENTS=" + GenerationConfig.EQUIPMENTS);
         }
         List<double[]> selected = new ArrayList<>(boundaries);
         Collections.shuffle(selected, random);
         selected = selected.subList(0, GenerationConfig.EQUIPMENTS);
+        System.out.println("✅ Selected " + selected.size() + " boundaries for station generation");
 
         // 3) For each selected boundary create 3 stations by Y interval
+        System.out.println("🏭 Generating stations for each selected boundary...");
         ArrayNode newStations = objectMapper.createArrayNode();
         long stationId = GenerationConfig.STATION_ID_START;
+        int stationCount = 0;
         for (double[] b : selected) {
             double x1 = b[0], y1 = b[1], z = b[2];
             double x2 = b[3], y2 = b[4];
@@ -65,17 +77,28 @@ public class StationsService {
                 pos.put("z", round1(z));
                 newStations.add(s);
                 stationId++;
+                stationCount++;
             }
         }
+        System.out.println("✅ Generated " + stationCount + " stations");
 
+        System.out.println("💾 Saving stations to database...");
         // 4) output JSON에 stations 병합 후 DB 저장
         ObjectNode outputObj = (output instanceof ObjectNode) ? (ObjectNode) output : objectMapper.createObjectNode();
         outputObj.set("stations", newStations);
-        configService.saveOutputToDb(outputObj);
+        configService.saveOutputToDb(userId, outputObj);
+        
+        System.out.println("📊 Final data summary:");
+        System.out.println("   - Total Stations Generated: " + stationCount);
+        System.out.println("   - Equipment Boundaries Used: " + selected.size());
+        System.out.println("   - Database Key: layout_seed.output");
+        System.out.println("✅ Data successfully saved to database");
+        System.out.println("🎉 Station Generation Process completed successfully!");
+        System.out.println("⏰ Process finished at: " + java.time.LocalDateTime.now());
 
         Result r = new Result();
         r.count = newStations.size();
-        r.outputPath = "db://AMHS_data:layout_seed.output";
+        r.outputPath = "db://" + userId + "_amhs_data:layout_seed.output";
         return r;
     }
 

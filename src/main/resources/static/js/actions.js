@@ -1,8 +1,7 @@
 async function runAddAddresses() {
     try {
         showLoading();
-        const res = await fetch('/api/run-generate', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const result = await res.json();
+        const result = await callAPI('/api/run-generate');
         hideLoading();
         if (result.success) {
             showStatus('✅ add Addresses가 성공적으로 실행되었습니다.', 'success');
@@ -19,8 +18,7 @@ async function runAddAddresses() {
 async function runAddLines() {
     try {
         showLoading();
-        const res = await fetch('/api/run-add-lines', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const result = await res.json();
+        const result = await callAPI('/api/run-add-lines');
         hideLoading();
         if (result.success) {
             showStatus('✅ add Lines가 성공적으로 실행되었습니다.', 'success');
@@ -37,8 +35,7 @@ async function runAddLines() {
 async function runCheckPy() {
     try {
         showLoading();
-        const res = await fetch('/api/run-check', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const result = await res.json();
+        const result = await callAPI('/api/run-check');
         hideLoading();
         if (result.success) {
             showStatus('✅ Checker가 성공적으로 실행되었습니다.', 'success');
@@ -88,25 +85,50 @@ async function runStationsPy() {
     }
 }
 
+// OHT Track 기본값들을 전역으로 정의
+const OHT_DEFAULT_VALUES = [
+  [100010,100110],
+  [100510,100610],
+  [101010,101110],
+  [101510,101610],
+  [102010,102110],
+  [102510,102610],
+  [103010,103110],
+  [103510,103610],
+  [104010,104110],
+  [105010,105110]
+];
+
+// OHT 기본값을 반환하는 함수 (다른 파일에서 사용)
+function getOHTDefaultValues() {
+    return OHT_DEFAULT_VALUES;
+}
+
+// 공통 API 호출 함수
+async function callAPI(endpoint, method = 'POST', body = null) {
+    const options = {
+        method: method,
+        headers: { 'Content-Type': 'application/json' }
+    };
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+    
+    const response = await fetch(endpoint, options);
+    if (!response.ok) {
+        throw new Error(`서버 오류 (${response.status})`);
+    }
+    return await response.json();
+}
+
 function showUDPGeneratorForm() {
     showStatus('OHT Track 생성 폼을 표시합니다.', 'info');
-    const defaults = [
-      [100010,100110],
-      [100510,100610],
-      [101010,101110],
-      [101510,101610],
-      [102010,102110],
-      [102510,102610],
-      [103010,103110],
-      [103510,103610],
-      [104010,104110],
-      [105010,105110]
-    ];
+    const defaults = OHT_DEFAULT_VALUES;
     const rows = defaults.map((p,i)=>{
       const idx=i;
       return `
         <tr>
-          <td style="padding:6px 8px;"><label><input type="checkbox" name="enabled_${idx}" ${idx===0?'checked':''}> OHT_${idx}</label></td>
+          <td style="padding:6px 8px;"><label><input type="checkbox" name="enabled_${idx}" checked> OHT_${idx}</label></td>
           <td style="padding:6px 8px;"><input type="number" name="startAddress_${idx}" class="form-control" value="${p[0]}" placeholder="예: 100050"></td>
           <td style="padding:6px 8px;"><input type="number" name="destinationAddress_${idx}" class="form-control" value="${p[1]}" placeholder="예: 100100"></td>
         </tr>`;
@@ -129,7 +151,7 @@ function showUDPGeneratorForm() {
                   </tbody>
                 </table>
                 <div class="form-actions">
-                    <button type="submit" class="update-btn">update to DB</button>
+                    <button type="submit" class="update-btn">update to oht_track_data.log</button>
                 </div>
             </form>
         </div>`;
@@ -164,9 +186,9 @@ async function runUDPGenerator(event) {
             return;
         }
 
-        // Bulk API로 한 번에 생성 요청
+        // 통합된 단일 엔드포인트로 한 번에 생성 요청
         const bulkPayload = entries.map(e=>({ startAddress: e.start, destinationAddress: e.dest, ohtId: `OHT_${e.idx}` }));
-        const bulkRes = await fetch('/api/run-udp-generator-bulk', {
+        const bulkRes = await fetch('/api/run-udp-generator', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bulkPayload)
         });
         const bulkResult = await bulkRes.json();
@@ -189,9 +211,94 @@ async function runUDPGenerator(event) {
 
 function displayExecutionOutput(viewerName, executionOutput, configUpdated) {
     const resultArea = document.getElementById('resultArea');
+    
+    // 주요 정보 섹션 생성
+    let summaryHTML = '';
+    if (configUpdated) {
+        // add Addresses용 정보
+        let addressInfo = '';
+        if (configUpdated.generated_addresses !== undefined) {
+            addressInfo = `
+                <div class="summary-item">
+                    <span class="summary-label">생성된 주소 수:</span>
+                    <span class="summary-value">${configUpdated.generated_addresses}개</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">생성된 라인 수:</span>
+                    <span class="summary-value">${configUpdated.generated_lines}개</span>
+                </div>`;
+        }
+        
+        // add Lines용 정보
+        let linesInfo = '';
+        if (configUpdated.phase1_added !== undefined) {
+            linesInfo = `
+                <div class="summary-item">
+                    <span class="summary-label">Phase 1 추가 라인:</span>
+                    <span class="summary-value">${configUpdated.phase1_added}개</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Phase 2 추가 라인:</span>
+                    <span class="summary-value">${configUpdated.phase2_added}개</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">총 라인 수:</span>
+                    <span class="summary-value">${configUpdated.total_lines}개</span>
+                </div>`;
+        }
+        
+        // add Stations용 정보
+        let stationsInfo = '';
+        if (configUpdated.generated_stations !== undefined) {
+            stationsInfo = `
+                <div class="summary-item">
+                    <span class="summary-label">생성된 스테이션 수:</span>
+                    <span class="summary-value">${configUpdated.generated_stations}개</span>
+                </div>`;
+        }
+        
+        // 공통 정보
+        let commonInfo = `
+            <div class="summary-item">
+                <span class="summary-label">데이터베이스 키:</span>
+                <span class="summary-value">${configUpdated.database_key || 'N/A'}</span>
+            </div>`;
+        
+        // check Errors용 정보
+        let checkInfo = '';
+        if (configUpdated.checked_addresses !== undefined) {
+            checkInfo = `
+                <div class="summary-item">
+                    <span class="summary-label">검사완료 주소 수:</span>
+                    <span class="summary-value">${configUpdated.checked_addresses}개</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">검사완료 라인 수:</span>
+                    <span class="summary-value">${configUpdated.checked_lines}개</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">검사완료 스테이션 수:</span>
+                    <span class="summary-value">${configUpdated.checked_stations}개</span>
+                </div>`;
+        }
+        
+        summaryHTML = `
+            <div class="result-section">
+                <h4>📊 생성 결과 요약</h4>
+                <div class="summary-grid">
+                    ${addressInfo}
+                    ${linesInfo}
+                    ${stationsInfo}
+                    ${checkInfo}
+                    ${commonInfo}
+                </div>
+            </div>`;
+    }
+    
     let outputHTML = `
         <div class="execution-result">
             <h3>🚀 ${viewerName} 실행 결과</h3>
+            ${summaryHTML}
             <div class="result-section">
                 <h4>📝 터미널 출력</h4>
                 <div class="terminal-output"><pre>${executionOutput.terminal_logs || '출력 없음'}</pre></div>
@@ -246,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             window.open(url, '_blank');
                         } else {
                             layers.forEach(layer => {
-                                const url = '/viewer3d?layers=' + encodeURIComponent(layers.join(',')) + '&overlap=0&primary=' + encodeURIComponent(layer) + '&comps=' + encodeURIComponent(comps);
+                                const url = '/viewer3d?layers=' + encodeURIComponent(layer) + '&overlap=0&primary=' + encodeURIComponent(layer) + '&comps=' + encodeURIComponent(comps);
                                 window.open(url, '_blank');
                             });
                         }
@@ -264,55 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-async function runExtractAMHS() {
-    try {
-        showLoading();
-        const res = await fetch('/api/extract-amhs-data', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const result = await res.json();
-        hideLoading();
-        if (result.success) {
-            showStatus('✅ AMHS_data 추출이 완료되었습니다.', 'success');
-            const resultArea = document.getElementById('resultArea');
-            resultArea.innerHTML = `
-                <div class="execution-result">
-                    <h3>📦 Extract 결과</h3>
-                    <div class="result-section">
-                        <h4>파일 경로</h4>
-                        <div class="detail-info">
-                            <p><strong>input.json:</strong> ${result.input_path}</p>
-                            <p><strong>output.json:</strong> ${result.output_path}</p>
-                        </div>
-                    </div>
-                </div>`;
-        } else {
-            showStatus('❌ AMHS_data 추출 실패: ' + result.message, 'error');
-        }
-    } catch (e) {
-        hideLoading();
-        showStatus('❌ AMHS_data 추출 중 오류: ' + e.message, 'error');
-    }
-}
-
-async function runDownloadAMHS() {
-    try {
-        showStatus('AMHS_data 압축 생성 중...', 'info');
-        const a = document.createElement('a');
-        a.href = '/api/download-amhs-data';
-        a.download = 'amhs_data.zip';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showStatus('✅ amhs_data.zip 다운로드를 시작했습니다.', 'success');
-        const resultArea = document.getElementById('resultArea');
-        resultArea.innerHTML = `
-            <div class="execution-result">
-                <h3>📦 AMHS_data 다운로드</h3>
-                <p>브라우저가 <code>amhs_data.zip</code> 다운로드를 시작했습니다.</p>
-            </div>`;
-    } catch (e) {
-        showStatus('❌ AMHS_data 다운로드 중 오류: ' + e.message, 'error');
-    }
-}
 
 function showExtractPanel() {
     const resultArea = document.getElementById('resultArea');
@@ -325,13 +383,13 @@ function showExtractPanel() {
                 <label style="display:block;margin:6px 0;"><input type="checkbox" name="output" checked> layout_output.json</label>
                 <label style="display:block;margin:6px 0;"><input type="checkbox" name="oht_log"> oht_track_data.log</label>
                 <div class="form-actions">
-                    <button type="submit" class="update-btn">extract DATA</button>
-                    <button type="button" class="update-btn" style="background:#17a2b8;" onclick="openH2Console()">h2 Console</button>
-                    <button type="button" class="update-btn" style="background:#dc3545;" onclick="resetDb()">DB reset</button>
+                    <button type="submit" class="update-btn">Download Data</button>
                 </div>
             </form>
         </div>`;
 }
+
+
 
 async function submitExtract(e) {
     e.preventDefault();
@@ -357,26 +415,5 @@ async function submitExtract(e) {
     }
 }
 
-function openH2Console() {
-    try {
-        window.open('/h2-console','_blank');
-        showStatus('H2 Console을 새 창에서 열었습니다.', 'info');
-    } catch (e) {
-        showStatus('❌ H2 Console 열기 실패: ' + e.message, 'error');
-    }
-}
-
-async function resetDb() {
-    try {
-        if (!confirm('DB의 모든 데이터를 삭제하고 초기화합니다. 계속하시겠습니까?')) return;
-        showStatus('DB 리셋 중...', 'info');
-        const res = await fetch('/api/reset-db', { method: 'POST' });
-        const result = await res.json();
-        if (result.success) showStatus('✅ DB가 초기화되었습니다.', 'success');
-        else showStatus('❌ DB 초기화 실패: ' + (result.message||'unknown'), 'error');
-    } catch (e) {
-        showStatus('❌ DB 초기화 중 오류: ' + e.message, 'error');
-    }
-}
 
 

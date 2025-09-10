@@ -13,11 +13,32 @@ Spring Boot 기반 AMHS 데이터 생성/레이아웃 시각화 도구. 기존 P
 
 ## 빠른 시작
 
-- 요구사항: JDK 17+, Gradle Wrapper 포함
+- 요구사항: JDK 21+, Gradle Wrapper 포함
 - 실행
   - 개발 실행: `./gradlew bootRun`
   - 빌드: `./gradlew build -x test`
   - 접속: 브라우저에서 `http://localhost:8080/`
+
+## Render.com 배포
+
+### 자동 배포 설정
+1. GitHub 저장소에 코드 푸시
+2. Render.com에서 "New Web Service" 선택
+3. GitHub 저장소 연결
+4. 설정:
+   - **Build Command**: `./gradlew build -x test`
+   - **Start Command**: `java -jar build/libs/AMHSDataGen-0.0.1-SNAPSHOT.jar`
+   - **Environment**: Java
+   - **Java Version**: 21
+
+### 환경 변수 설정
+- `SPRING_PROFILES_ACTIVE`: `production`
+- `JAVA_OPTS`: `-Xmx512m -Xms256m`
+
+### 배포 후 확인사항
+- 애플리케이션이 정상적으로 시작되는지 확인
+- 웹 인터페이스 접근 가능 여부 확인
+- 데이터 생성 기능 정상 작동 확인
 
 ## 디렉토리 구조(요약)
 

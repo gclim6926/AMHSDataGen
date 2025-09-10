@@ -6,7 +6,7 @@ plugins {
 
 group = 'demo'
 version = '0.0.1-SNAPSHOT'
-description = 'layoutviz'
+description = 'AMHSDataGen'
 
 java {
     toolchain {

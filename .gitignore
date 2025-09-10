@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Render.com ###
+render.yaml
+
+### Data files ###
+data/
+*.log

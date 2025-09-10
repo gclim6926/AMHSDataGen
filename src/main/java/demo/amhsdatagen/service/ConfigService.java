@@ -2,8 +2,6 @@ package demo.amhsdatagen.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.amhsdatagen.model.ConfigEntry;
-import demo.amhsdatagen.repository.ConfigEntryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +15,16 @@ public class ConfigService {
     private static final String KEY_OUTPUT = "layout_seed.output";
     private static final String KEY_OHT_LOG = "oht_track.datalog";
 
-    private final ConfigEntryRepository repository;
+    private final UserTableService userTableService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ConfigService(ConfigEntryRepository repository) {
-        this.repository = repository;
+    public ConfigService(UserTableService userTableService) {
+        this.userTableService = userTableService;
     }
 
-    public Optional<JsonNode> loadInputFromDb() {
-        return repository.findByConfigKey(KEY_INPUT).map(entry -> {
+    // 사용자별 데이터 로드/저장 메서드들
+    public Optional<JsonNode> loadInputFromDb(String userId) {
+        return userTableService.findByUserIdAndKey(userId, KEY_INPUT).map(entry -> {
             try {
                 return objectMapper.readTree(entry.getConfigValue());
             } catch (IOException e) {
@@ -35,16 +34,13 @@ public class ConfigService {
     }
 
     @Transactional
-    public void saveInputToDb(JsonNode node) {
+    public void saveInputToDb(String userId, JsonNode node) {
         String json = node.toPrettyString();
-        ConfigEntry entry = repository.findByConfigKey(KEY_INPUT)
-                .orElseGet(() -> new ConfigEntry(KEY_INPUT, json));
-        entry.setConfigValue(json);
-        repository.save(entry);
+        userTableService.saveToUserTable(userId, KEY_INPUT, json);
     }
 
-    public Optional<JsonNode> loadOutputFromDb() {
-        return repository.findByConfigKey(KEY_OUTPUT).map(entry -> {
+    public Optional<JsonNode> loadOutputFromDb(String userId) {
+        return userTableService.findByUserIdAndKey(userId, KEY_OUTPUT).map(entry -> {
             try {
                 return objectMapper.readTree(entry.getConfigValue());
             } catch (IOException e) {
@@ -54,32 +50,57 @@ public class ConfigService {
     }
 
     @Transactional
-    public void saveOutputToDb(JsonNode node) {
+    public void saveOutputToDb(String userId, JsonNode node) {
         String json = node.toPrettyString();
-        ConfigEntry entry = repository.findByConfigKey(KEY_OUTPUT)
-                .orElseGet(() -> new ConfigEntry(KEY_OUTPUT, json));
-        entry.setConfigValue(json);
-        repository.save(entry);
+        userTableService.saveToUserTable(userId, KEY_OUTPUT, json);
     }
 
-    public Optional<String> loadOhtLogFromDb() {
-        return repository.findByConfigKey(KEY_OHT_LOG).map(ConfigEntry::getConfigValue);
+    public Optional<String> loadOhtLogFromDb(String userId) {
+        return userTableService.findByUserIdAndKey(userId, KEY_OHT_LOG).map(entry -> entry.getConfigValue());
     }
 
     @Transactional
-    public void saveOhtLogToDb(String content) {
+    public void saveOhtLogToDb(String userId, String content) {
         String newChunk = content == null ? "" : content;
-        ConfigEntry entry = repository.findByConfigKey(KEY_OHT_LOG)
-                .orElseGet(() -> new ConfigEntry(KEY_OHT_LOG, ""));
-        String prev = entry.getConfigValue();
+        Optional<UserTableService.ConfigData> existing = userTableService.findByUserIdAndKey(userId, KEY_OHT_LOG);
+        
+        String prev = existing.map(UserTableService.ConfigData::getConfigValue).orElse("");
         StringBuilder sb = new StringBuilder();
         if (prev != null && !prev.isEmpty()) {
             sb.append(prev);
             if (!prev.endsWith("\n")) sb.append('\n');
         }
         if (!newChunk.isEmpty()) sb.append(newChunk);
-        entry.setConfigValue(sb.toString());
-        repository.save(entry);
+        
+        userTableService.saveToUserTable(userId, KEY_OHT_LOG, sb.toString());
+    }
+    
+    // 기존 메서드들 (사용자 ID 없이 호출되는 경우를 위한 기본값)
+    public Optional<JsonNode> loadInputFromDb() {
+        return Optional.empty();
+    }
+
+    @Transactional
+    public void saveInputToDb(JsonNode node) {
+        // 사용자 ID가 없는 경우 무시
+    }
+
+    public Optional<JsonNode> loadOutputFromDb() {
+        return Optional.empty();
+    }
+
+    @Transactional
+    public void saveOutputToDb(JsonNode node) {
+        // 사용자 ID가 없는 경우 무시
+    }
+
+    public Optional<String> loadOhtLogFromDb() {
+        return Optional.empty();
+    }
+
+    @Transactional
+    public void saveOhtLogToDb(String content) {
+        // 사용자 ID가 없는 경우 무시
     }
 }
 

@@ -23,9 +23,56 @@ function displayInputForm(inputData) {
     const title = document.createElement('h3');
     title.textContent = '🔧 Layout Seed - 샘플 기반 편집';
     container.appendChild(title);
-    const description = document.createElement('p');
-    description.textContent = 'AMHS(Automated Material Handling System) 설계의 대표적인 Spine Layout Design을 위한 좌표를 입력하세요.\n' +
-        '초기 값은 input.sample.json이며, 저장 시 DB에 반영합니다. "Save to DB" 버튼을 클릭하세요.';
+    const description = document.createElement('div');
+    description.className = 'layout-description';
+    description.innerHTML = `
+        <h4>🏗️ AMHS Spine Layout Design</h4>
+        <p>AMHS(Automated Material Handling System)의 3층 구조 Spine Layout을 설계합니다. 각 구성 요소의 좌표를 입력하여 OHT(Overhead Hoist Transport) 시스템의 이동 경로를 정의합니다.</p>
+        
+        <div class="layout-sections">
+            <div class="layout-section">
+                <h5>🔄 층간 이동 시스템</h5>
+                <ul>
+                    <li><strong>layout_crossover</strong>: OHT의 층간(z0, z4822, z6022) 이동을 위한 3차원 좌표 트랙</li>
+                    <li><strong>z0_4822</strong>: z0 ↔ z4822 층간 이동 전용 포인트</li>
+                    <li><strong>z4822_6022</strong>: z4822 ↔ z6022 층간 이동 전용 포인트</li>
+                </ul>
+            </div>
+            
+            <div class="layout-section">
+                <h5>🏭 z4822층 (중간층) 레일 시스템</h5>
+                <ul>
+                    <li><strong>z4822</strong>: 중간층의 주요 레일 트랙 (2D 좌표)</li>
+                    <li><strong>central_loop</strong>: InterBay, Main Loop - 공장 중앙을 가로지르는 핵심 레일</li>
+                    <li><strong>local_loop</strong>: IntraBay - 특정 제조 장비 구역으로 연결되는 분기 레일</li>
+                    <li><strong>local_loop_for_layer</strong>: 층간 연결을 위한 버퍼 공간 및 흐름 제어 포인트</li>
+                </ul>
+            </div>
+            
+            <div class="layout-section">
+                <h5>🏭 z6022층 (최상층) 레일 시스템</h5>
+                <ul>
+                    <li><strong>z6022</strong>: 최상층의 주요 레일 트랙 (2D 좌표)</li>
+                    <li><strong>central_loop</strong>: InterBay, Main Loop - 공장 중앙을 가로지르는 핵심 레일</li>
+                    <li><strong>local_loop</strong>: IntraBay - 특정 제조 장비 구역으로 연결되는 분기 레일</li>
+                </ul>
+            </div>
+            
+            <div class="layout-section">
+                <h5>⚡ 단축 경로 시스템</h5>
+                <ul>
+                    <li><strong>shortcut</strong>: 중앙 루프나 베이 간 이동 거리 단축을 위한 추가 트랙</li>
+                    <li><strong>shortcut_central_loop</strong>: 중앙 루프에 위치하는 단축 포인트</li>
+                    <li><strong>shortcut_layer_local_loop</strong>: 층간 이동을 위한 단축 포인트 (버퍼 공간 활용)</li>
+                    <li><strong>shortcut_local_loop</strong>: 로컬 루프에 위치하는 단축 포인트</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="instruction-box">
+            <p><strong>📝 사용 방법:</strong> 초기 값은 input.sample.json에서 로드되며, 수정 후 "update to layout_seed.input" 버튼을 클릭하여 데이터베이스에 저장합니다.</p>
+        </div>
+    `;
     container.appendChild(description);
     const form = document.createElement('form');
     form.id = 'inputForm';
@@ -69,7 +116,7 @@ function displayInputForm(inputData) {
     const submitButton = document.createElement('button');
     submitButton.type = 'submit';
     submitButton.className = 'update-btn';
-    submitButton.textContent = 'Save to DB';
+    submitButton.textContent = 'update to layout_seed.input';
     actionsDiv.appendChild(submitButton);
     form.appendChild(actionsDiv);
     container.appendChild(form);

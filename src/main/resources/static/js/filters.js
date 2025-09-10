@@ -9,22 +9,9 @@ function getFilterValues() {
     if (linesChecked) components.push('lines');
     if (stationsChecked) components.push('stations');
     if (ohtsChecked) components.push('ohts');
-    
 
     const overlapCheckbox = document.querySelector('input[value="Overlap"]');
     const overlapChecked = overlapCheckbox ? overlapCheckbox.checked : false;
     if (overlapChecked) layers.push('Overlap');
     return { layers, components };
 }
-
-function applyFilters() {
-    const filters = getFilterValues();
-    showStatus('필터가 적용되었습니다.', 'info');
-    if (currentView === '2d') {
-        run2DViewer();
-    } else if (currentView === '3d') {
-        run3DViewer();
-    }
-}
-
-

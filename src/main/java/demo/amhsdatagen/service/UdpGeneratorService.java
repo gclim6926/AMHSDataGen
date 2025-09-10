@@ -15,9 +15,9 @@ public class UdpGeneratorService {
         this.configService = configService;
     }
 
-    public Result runGenerate(int startAddress, int destinationAddress, String ohtId) throws IOException {
+    public Result runGenerate(String userId, int startAddress, int destinationAddress, String ohtId) throws IOException {
         // Build address graph from layout.output (DB)
-        Map<Integer, List<Integer>> graph = buildGraphFromOutput();
+        Map<Integer, List<Integer>> graph = buildGraphFromOutput(userId);
 
         List<Integer> path = bfsShortestPath(graph, startAddress, destinationAddress);
         if (path == null || path.size() < 2) throw new IOException("No path found between addresses");
@@ -35,19 +35,19 @@ public class UdpGeneratorService {
             now += inc;
         }
         String content = buf.toString();
-        configService.saveOhtLogToDb(content);
+        configService.saveOhtLogToDb(userId, content);
 
         Result r = new Result();
-        r.logPath = "db://AMHS_data:oht_track.datalog";
+        r.logPath = "db://" + userId + "_amhs_data:oht_track.datalog";
         r.summary = "OHT track entries=" + (path.size() - 1) + ", saved to DB" + (ohtId!=null? (", id="+ohtId): "");
         r.content = content;
         return r;
     }
 
-    public Result runGenerateBulk(java.util.List<Request> entries) throws IOException {
+    public Result runGenerateBulk(String userId, java.util.List<Request> entries) throws IOException {
         if (entries == null || entries.isEmpty()) throw new IOException("no entries");
         // Build address graph from layout.output (DB) once
-        Map<Integer, List<Integer>> graph = buildGraphFromOutput();
+        Map<Integer, List<Integer>> graph = buildGraphFromOutput(userId);
 
         // Compute edge lists per OHT
         List<List<int[]>> edgeLists = new ArrayList<>();
@@ -93,10 +93,10 @@ public class UdpGeneratorService {
             }
         }
         String content = out.toString();
-        configService.saveOhtLogToDb(content);
+        configService.saveOhtLogToDb(userId, content);
 
         Result r = new Result();
-        r.logPath = "db://AMHS_data:oht_track.datalog";
+        r.logPath = "db://" + userId + "_amhs_data:oht_track.datalog";
         r.summary = "OHT track entries written (bulk) -> saved to DB";
         r.content = content;
         return r;
@@ -108,8 +108,8 @@ public class UdpGeneratorService {
         public String ohtId;
     }
 
-    private Map<Integer, List<Integer>> buildGraphFromOutput() throws IOException {
-        JsonNode output = configService.loadOutputFromDb().orElseThrow(() -> new IOException("output not found in DB"));
+    private Map<Integer, List<Integer>> buildGraphFromOutput(String userId) throws IOException {
+        JsonNode output = configService.loadOutputFromDb(userId).orElseThrow(() -> new IOException("output not found in DB"));
         JsonNode linesNode = output.path("lines");
         Map<Integer, List<Integer>> graph = new HashMap<>();
         if (linesNode != null && linesNode.isArray()) {

@@ -4,9 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import demo.amhsdatagen.model.Address;
-import demo.amhsdatagen.model.Line;
-import demo.amhsdatagen.model.Position;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,44 +17,51 @@ public class InputGeneratorService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Random random = new Random();
-
-    private final DataFileService dataFileService;
     private final ConfigService configService;
 
-    public InputGeneratorService(DataFileService dataFileService, ConfigService configService) {
-        this.dataFileService = dataFileService;
+    public InputGeneratorService(ConfigService configService) {
         this.configService = configService;
     }
 
-    public Result runGenerate() throws IOException {
-        // 입력 로드 정책: DB 우선, 없으면 샘플 사용 (파일 생성 없음)
-        JsonNode root = configService.loadInputFromDb().orElseGet(() -> {
-            try {
-                return dataFileService.readSample();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+    public Result runGenerate(String userId) throws IOException {
+        System.out.println("🚀 Starting Address Generation Process...");
+        System.out.println("📋 User ID: " + userId);
+        System.out.println("⏰ Process started at: " + java.time.LocalDateTime.now());
+        
+        // 입력 로드 정책: DB 우선, 없으면 샘플 사용
+        System.out.println("📂 Loading input data from database...");
+        JsonNode root = configService.loadInputFromDb(userId).orElseThrow(() -> new RuntimeException("Input data not found"));
+        System.out.println("✅ Input data loaded successfully");
+        List<String> keys = new ArrayList<>();
+        root.fieldNames().forEachRemaining(keys::add);
+        System.out.println("📊 Available data keys: " + String.join(", ", keys));
 
         long addressId = GenerationConfig.ADDRESS_ID_START;
         long lineId = GenerationConfig.LINE_ID_START;
-        List<Address> addresses = new ArrayList<>();
-        List<Line> lines = new ArrayList<>();
+        List<AddressData> addresses = new ArrayList<>();
+        List<LineData> lines = new ArrayList<>();
 
+        System.out.println("🔄 Processing layer crossover connections...");
         // Layer crossover connections (z0-4822, z4822-6022) first
         addressId = processLayerCrossover(root.path("layer_crossover"), addresses, lines, addressId, lineId);
         lineId = GenerationConfig.LINE_ID_START + lines.size();
+        System.out.println("✅ Layer crossover processing completed - Addresses: " + addresses.size() + ", Lines: " + lines.size());
 
-        // Minimal parity: process z6022/z4822 central/local loops with 2D points
+        System.out.println("🏭 Processing z6022 layer (top floor)...");
+        // Process z6022/z4822 central/local loops with 2D points
         addressId = processLayer(root.path("z6022"), 6022.0, addresses, lines, addressId, lineId);
-        lineId += lines.size();
+        lineId = GenerationConfig.LINE_ID_START + lines.size();
+        System.out.println("✅ z6022 layer processing completed - Addresses: " + addresses.size() + ", Lines: " + lines.size());
+        
+        System.out.println("🏭 Processing z4822 layer (middle floor)...");
         addressId = processLayer(root.path("z4822"), 4822.0, addresses, lines, addressId, lineId);
         lineId = GenerationConfig.LINE_ID_START + lines.size();
+        System.out.println("✅ z4822 layer processing completed - Addresses: " + addresses.size() + ", Lines: " + lines.size());
 
-        // Save output (file)
+        // Save output (DB)
         ObjectNode output = objectMapper.createObjectNode();
         ArrayNode addressesNode = output.putArray("addresses");
-        for (Address a : addresses) {
+        for (AddressData a : addresses) {
             ObjectNode aNode = addressesNode.addObject();
             aNode.put("id", a.getId());
             aNode.put("address", a.getAddress());
@@ -68,7 +72,7 @@ public class InputGeneratorService {
             pos.put("z", a.getPos().getZ());
         }
         ArrayNode linesNode = output.putArray("lines");
-        for (Line l : lines) {
+        for (LineData l : lines) {
             ObjectNode lNode = linesNode.addObject();
             lNode.put("id", l.getId());
             lNode.put("name", l.getName());
@@ -85,19 +89,29 @@ public class InputGeneratorService {
             lNode.put("curve", l.isCurve());
         }
 
-        // Save output to DB (instead of file)
-        configService.saveOutputToDb(output);
+        System.out.println("💾 Saving data to database...");
+        System.out.println("📊 Data summary:");
+        System.out.println("   - Total Addresses: " + addresses.size());
+        System.out.println("   - Total Lines: " + lines.size());
+        System.out.println("   - Database Key: layout_seed.output");
+        
+        // Save output to DB
+        configService.saveOutputToDb(userId, output);
+        
+        System.out.println("✅ Data successfully saved to database");
+        System.out.println("🎉 Address Generation Process completed successfully!");
+        System.out.println("⏰ Process finished at: " + java.time.LocalDateTime.now());
 
         Result res = new Result();
         res.addressCount = addresses.size();
         res.lineCount = lines.size();
-        res.outputPath = "db://AMHS_data:layout_seed.output";
+        res.outputPath = "db://" + userId + "_amhs_data:layout_seed.output";
         return res;
     }
-
+    
     private long processLayerCrossover(JsonNode lcNode,
-                                       List<Address> addresses,
-                                       List<Line> lines,
+                                       List<AddressData> addresses,
+                                       List<LineData> lines,
                                        long currentAddressId,
                                        long currentLineIdStart) {
         if (lcNode == null || lcNode.isMissingNode()) return currentAddressId;
@@ -107,8 +121,8 @@ public class InputGeneratorService {
     }
 
     private long processConnectionArray(JsonNode arr,
-                                        List<Address> addresses,
-                                        List<Line> lines,
+                                        List<AddressData> addresses,
+                                        List<LineData> lines,
                                         long currentAddressId) {
         if (arr == null || !arr.isArray()) return currentAddressId;
         for (JsonNode pair : arr) {
@@ -124,16 +138,16 @@ public class InputGeneratorService {
                     double tz = t.get(2).asDouble();
 
                     long startId = currentAddressId;
-                    Address aStart = new Address(startId, startId, "ADDR_" + startId, new Position(round1(sx), round1(sy), sz));
+                    AddressData aStart = new AddressData(startId, startId, "ADDR_" + startId, new PositionData(round1(sx), round1(sy), sz));
                     addresses.add(aStart);
                     currentAddressId++;
                     long endId = currentAddressId;
-                    Address aEnd = new Address(endId, endId, "ADDR_" + endId, new Position(round1(tx), round1(ty), tz));
+                    AddressData aEnd = new AddressData(endId, endId, "ADDR_" + endId, new PositionData(round1(tx), round1(ty), tz));
                     addresses.add(aEnd);
                     currentAddressId++;
 
                     long newLineId = GenerationConfig.LINE_ID_START + lines.size();
-                    Line l = new Line(newLineId, "LINE_" + newLineId, startId, endId,
+                    LineData l = new LineData(newLineId, "LINE_" + newLineId, startId, endId,
                             aStart.getPos(), aEnd.getPos(), false);
                     lines.add(l);
                 }
@@ -143,7 +157,7 @@ public class InputGeneratorService {
     }
 
     private long processLayer(JsonNode layerNode, double zValue,
-                              List<Address> addresses, List<Line> lines,
+                              List<AddressData> addresses, List<LineData> lines,
                               long addressIdStart, long lineIdStart) {
         long currentAddressId = addressIdStart;
         long currentLineId = lineIdStart;
@@ -162,7 +176,7 @@ public class InputGeneratorService {
     }
 
     private long processLinesArray(JsonNode linesArrayNode, double zValue,
-                                   List<Address> addresses, List<Line> lines,
+                                   List<AddressData> addresses, List<LineData> lines,
                                    long currentAddressId, long currentLineId) {
         if (!linesArrayNode.isArray()) return currentAddressId;
         Iterator<JsonNode> it = linesArrayNode.elements();
@@ -171,10 +185,10 @@ public class InputGeneratorService {
             if (lineNode.isArray() && lineNode.size() == 2) {
                 double[] start = readPoint2D(lineNode.get(0));
                 double[] end = readPoint2D(lineNode.get(1));
-                List<Address> generated = generateAddressesOnLine(start, end, zValue, currentAddressId);
+                List<AddressData> generated = generateAddressesOnLine(start, end, zValue, currentAddressId);
                 addresses.addAll(generated);
                 if (generated.size() > 1) {
-                    List<Line> genLines = generateLinesFromAddresses(generated, currentLineId);
+                    List<LineData> genLines = generateLinesFromAddresses(generated, currentLineId);
                     lines.addAll(genLines);
                     currentLineId += genLines.size();
                 }
@@ -192,8 +206,8 @@ public class InputGeneratorService {
         return new double[] {0.0, 0.0};
     }
 
-    private List<Address> generateAddressesOnLine(double[] start, double[] end, double zValue, long startId) {
-        List<Address> list = new ArrayList<>();
+    private List<AddressData> generateAddressesOnLine(double[] start, double[] end, double zValue, long startId) {
+        List<AddressData> list = new ArrayList<>();
         double x1 = start[0], y1 = start[1];
         double x2 = end[0], y2 = end[1];
         double dx = x2 - x1, dy = y2 - y1;
@@ -201,7 +215,7 @@ public class InputGeneratorService {
 
         long id = startId;
         // start
-        list.add(new Address(id, id, "ADDR_" + id, new Position(round1(x1), round1(y1), zValue)));
+        list.add(new AddressData(id, id, "ADDR_" + id, new PositionData(round1(x1), round1(y1), zValue)));
         id++;
 
         double current = 0.0;
@@ -212,24 +226,24 @@ public class InputGeneratorService {
                 double ratio = current / length;
                 double x = x1 + ratio * dx;
                 double y = y1 + ratio * dy;
-                list.add(new Address(id, id, "ADDR_" + id, new Position(round1(x), round1(y), zValue)));
+                list.add(new AddressData(id, id, "ADDR_" + id, new PositionData(round1(x), round1(y), zValue)));
                 id++;
             }
         }
         // end
-        list.add(new Address(id, id, "ADDR_" + id, new Position(round1(x2), round1(y2), zValue)));
+        list.add(new AddressData(id, id, "ADDR_" + id, new PositionData(round1(x2), round1(y2), zValue)));
 
         return list;
     }
 
-    private List<Line> generateLinesFromAddresses(List<Address> addresses, long startLineId) {
-        List<Line> list = new ArrayList<>();
+    private List<LineData> generateLinesFromAddresses(List<AddressData> addresses, long startLineId) {
+        List<LineData> list = new ArrayList<>();
         if (addresses.size() < 2) return list;
         long lineId = startLineId;
         for (int i = 0; i < addresses.size() - 1; i++) {
-            Address a = addresses.get(i);
-            Address b = addresses.get(i + 1);
-            Line l = new Line(lineId, "LINE_" + a.getId() + "_" + b.getId(), a.getId(), b.getId(), a.getPos(), b.getPos(), false);
+            AddressData a = addresses.get(i);
+            AddressData b = addresses.get(i + 1);
+            LineData l = new LineData(lineId, "LINE_" + a.getId() + "_" + b.getId(), a.getId(), b.getId(), a.getPos(), b.getPos(), false);
             list.add(l);
             lineId++;
         }
@@ -246,11 +260,71 @@ public class InputGeneratorService {
         return Math.round(v * 10.0) / 10.0;
     }
 
+    // Inner classes for data transfer
+    private static class AddressData {
+        private final long id;
+        private final long address;
+        private final String name;
+        private final PositionData pos;
+
+        public AddressData(long id, long address, String name, PositionData pos) {
+            this.id = id;
+            this.address = address;
+            this.name = name;
+            this.pos = pos;
+        }
+
+        public long getId() { return id; }
+        public long getAddress() { return address; }
+        public String getName() { return name; }
+        public PositionData getPos() { return pos; }
+    }
+
+    private static class PositionData {
+        private final double x, y, z;
+
+        public PositionData(double x, double y, double z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public double getX() { return x; }
+        public double getY() { return y; }
+        public double getZ() { return z; }
+    }
+
+    private static class LineData {
+        private final long id;
+        private final String name;
+        private final long fromAddress;
+        private final long toAddress;
+        private final PositionData fromPos;
+        private final PositionData toPos;
+        private final boolean curve;
+
+        public LineData(long id, String name, long fromAddress, long toAddress, PositionData fromPos, PositionData toPos, boolean curve) {
+            this.id = id;
+            this.name = name;
+            this.fromAddress = fromAddress;
+            this.toAddress = toAddress;
+            this.fromPos = fromPos;
+            this.toPos = toPos;
+            this.curve = curve;
+        }
+
+        public long getId() { return id; }
+        public String getName() { return name; }
+        public long getFromAddress() { return fromAddress; }
+        public long getToAddress() { return toAddress; }
+        public PositionData getFromPos() { return fromPos; }
+        public PositionData getToPos() { return toPos; }
+        public boolean isCurve() { return curve; }
+    }
+
     public static class Result {
         public int addressCount;
         public int lineCount;
         public String outputPath;
     }
 }
-
-

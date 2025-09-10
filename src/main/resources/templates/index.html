@@ -11,15 +11,31 @@
     <div class="top-menu">
         <a href="#" class="logo">AMHS Data Generator</a>
         <div class="menu-items">
-            <div class="menu-item" data-view="2d">📊 2D Viewer</div>
-            <div class="menu-item" data-view="3d">🎯 3D Viewer</div>
-            <div class="menu-item" data-view="extract_amhs" style="font-weight:700;">📦 DB Management</div>
-            <div class="menu-item" data-view="layout_seed">Layout Seed</div>
-            <div class="menu-item" data-view="add_addresses">add Addresses</div>
-            <div class="menu-item" data-view="add_lines_endpoint">add Lines</div>
-            <div class="menu-item" data-view="stations">add Stations</div>
-            <div class="menu-item" data-view="check">Check</div>
-            <div class="menu-item" data-view="udp_generator">make OHT Simulation</div>
+            <div class="menu-group">
+                <div class="menu-item primary" data-view="data_autogen">🚀 Data AutoGen</div>
+                <div class="menu-item primary" data-view="extract_amhs">📥 Download</div>
+                <div class="menu-item primary" data-view="2d">📊 2D Viewer</div>
+                <div class="menu-item primary" data-view="3d">🎯 3D Viewer</div>
+            </div>
+            <div class="menu-group">
+                <div class="menu-item secondary" data-view="layout_seed"><span class="step-number">1</span>Layout Seed</div>
+                <div class="menu-item secondary" data-view="add_addresses"><span class="step-number">2</span>add Addresses</div>
+                <div class="menu-item secondary" data-view="add_lines_endpoint"><span class="step-number">3</span>add Lines</div>
+                <div class="menu-item secondary" data-view="stations"><span class="step-number">4</span>add Stations</div>
+                <div class="menu-item secondary" data-view="check"><span class="step-number">5</span>check Errors</div>
+                <div class="menu-item secondary" data-view="udp_generator"><span class="step-number">6</span>make OHTs Simulation</div>
+            </div>
+        </div>
+        <div class="user-info">
+            <form th:action="@{/logout}" method="post" class="user-logout-form">
+                <button type="submit" class="btn-user-logout">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <span class="user-id" th:text="${userId}"></span>
+                        <span class="logout-text">로그아웃</span>
+                    </div>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -42,11 +58,35 @@
                 <label><input type="checkbox" value="lines" checked> Lines</label>
                 <label><input type="checkbox" value="stations" checked> Stations</label>
                 <label><input type="checkbox" value="ohts"> OHTs</label>
-                
             </div>
         </div>
         
-        <button class="apply-btn" onclick="applyFilters()">Apply Filters</button>
+
+        <!-- 사용자 정보 -->
+        <div class="status-section">
+            <h3>👤 사용자 정보</h3>
+            <div class="status-item">
+                <span class="status-label">UserID:</span>
+                <span class="status-value" id="user-id">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">마지막 활동:</span>
+                <span class="status-value" id="last-activity">-</span>
+            </div>
+        </div>
+
+        <!-- 데이터베이스 상태 -->
+        <div class="status-section">
+            <h3>🗄️ 데이터베이스</h3>
+            <div class="status-item">
+                <span class="status-label">테이블명:</span>
+                <span class="status-value" id="table-name">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">DB 연결:</span>
+                <span class="status-value" id="db-connection">-</span>
+            </div>
+        </div>
     </div>
 
     <!-- Sidebar Toggle Button -->
@@ -59,7 +99,118 @@
         <div class="content-area">
             <div class="welcome-message">
                 <h2>🚀 AMHS Data Generator에 오신 것을 환영합니다!</h2>
-                <p>위의 메뉴에서 원하는 기능을 선택하세요.</p>
+                <p>아래 메뉴 설명을 참고하여 원하는 기능을 선택하세요.</p>
+            </div>
+            
+            <div class="menu-guide">
+                <div class="menu-section">
+                    <h3>📋 Top 메뉴</h3>
+                    <div class="menu-group-desc">
+                        <div class="group-section">
+                            <h4>⚙️ 데이터 생성 메뉴</h4>
+                            <p>AMHS 데이터를 생성하기 위해 순서대로 실행해야 하는 단계들입니다.</p>
+                            <div class="menu-grid">
+                                <div class="menu-item-desc">
+                                    <span class="step-number">1</span>
+                                    <span class="menu-icon">🌱</span>
+                                    <div class="menu-content">
+                                        <h4>Layout Seed</h4>
+                                        <p>AMHS 레이아웃의 기본 설정을 구성하고 초기 데이터를 생성합니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="step-number">2</span>
+                                    <span class="menu-icon">📍</span>
+                                    <div class="menu-content">
+                                        <h4>add Addresses</h4>
+                                        <p>AMHS 시스템의 주소(Address) 데이터를 자동으로 생성합니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="step-number">3</span>
+                                    <span class="menu-icon">🔗</span>
+                                    <div class="menu-content">
+                                        <h4>add Lines</h4>
+                                        <p>주소 간의 연결선(Line) 데이터를 생성하여 경로를 설정합니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="step-number">4</span>
+                                    <span class="menu-icon">🏭</span>
+                                    <div class="menu-content">
+                                        <h4>add Stations</h4>
+                                        <p>작업 스테이션(Station) 데이터를 생성하여 처리 지점을 설정합니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="step-number">5</span>
+                                    <span class="menu-icon">✅</span>
+                                    <div class="menu-content">
+                                        <h4>check Errors</h4>
+                                        <p>생성된 데이터의 유효성을 검사하고 오류를 확인합니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="step-number">6</span>
+                                    <span class="menu-icon">🚛</span>
+                                    <div class="menu-content">
+                                        <h4>make OHTs Simulation</h4>
+                                        <p>OHT(Overhead Hoist Transport) 시뮬레이션 데이터를 생성합니다.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="group-section">
+                            <h4>🔧 데이터 관리 메뉴</h4>
+                            <p>시각화 및 관리 기능으로, 언제든지 사용할 수 있는 주요 도구들입니다.</p>
+                            <div class="menu-grid">
+                                <div class="menu-item-desc">
+                                    <span class="menu-icon">🚀</span>
+                                    <div class="menu-content">
+                                        <h4>Data AutoGen</h4>
+                                        <p>모든 데이터 생성 단계를 자동으로 순차 실행합니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="menu-icon">📥</span>
+                                    <div class="menu-content">
+                                        <h4>Download</h4>
+                                        <p>생성된 데이터를 다운로드할 수 있습니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="menu-icon">📊</span>
+                                    <div class="menu-content">
+                                        <h4>2D Viewer</h4>
+                                        <p>생성된 레이아웃 데이터를 2차원으로 시각화하여 확인할 수 있습니다.</p>
+                                    </div>
+                                </div>
+                                <div class="menu-item-desc">
+                                    <span class="menu-icon">🎯</span>
+                                    <div class="menu-content">
+                                        <h4>3D Viewer</h4>
+                                        <p>생성된 레이아웃 데이터를 3차원으로 시각화하여 입체적으로 확인할 수 있습니다.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="menu-section">
+                    <h3>🎛️ Side 메뉴 (필터 설정)</h3>
+                    <div class="filter-guide">
+                        <div class="filter-item">
+                            <h4>Layer Filter</h4>
+                            <p>시각화할 레이어를 선택합니다. z6022, z4822, z0 레이어와 Overlap 모드를 설정할 수 있습니다.</p>
+                        </div>
+                        <div class="filter-item">
+                            <h4>Component Filter</h4>
+                            <p>표시할 구성 요소를 선택합니다. Addresses, Lines, Stations, OHTs 중 원하는 항목을 체크하세요.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div id="statusArea"></div>
