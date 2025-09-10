@@ -12,7 +12,6 @@
 # Build artifacts
 build/
 .gradle/
-gradle/
 
 # OS
 .DS_Store
