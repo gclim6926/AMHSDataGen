@@ -1,8 +1,11 @@
 # Multi-stage build for smaller final image
-FROM openjdk:21-jdk-slim AS builder
+FROM eclipse-temurin:21-jdk-alpine AS builder
 
 # Set working directory
 WORKDIR /app
+
+# Install necessary packages for Alpine
+RUN apk add --no-cache bash
 
 # Copy gradle files first for better caching
 COPY gradlew .
@@ -19,8 +22,8 @@ COPY src src
 # Build the application
 RUN ./gradlew build -x test
 
-# Final stage
-FROM openjdk:21-jre-slim
+# Final stage - use JRE for smaller image
+FROM eclipse-temurin:21-jre-alpine
 
 # Set working directory
 WORKDIR /app
