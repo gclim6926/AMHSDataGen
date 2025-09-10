@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  amhs-data-generator:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

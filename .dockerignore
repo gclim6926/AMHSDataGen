@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# Build artifacts
+build/
+.gradle/
+gradle/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data files (will be created at runtime)
+data/
+*.db
+*.trace.db
+
+# Documentation
+README.md
+*.md
+
+# Render specific
+render.yaml
+
+# Test files
+src/test/
