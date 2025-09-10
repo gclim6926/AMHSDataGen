@@ -7,17 +7,16 @@ WORKDIR /app
 # Install necessary packages for Alpine
 RUN apk add --no-cache bash
 
-# Copy gradle files first for better caching
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
+# Copy all gradle-related files at once
+COPY gradlew* ./
+COPY gradle/ gradle/
+COPY build.gradle settings.gradle ./
 
 # Make gradlew executable
 RUN chmod +x gradlew
 
 # Copy source code
-COPY src src
+COPY src/ src/
 
 # Build the application
 RUN ./gradlew build -x test
