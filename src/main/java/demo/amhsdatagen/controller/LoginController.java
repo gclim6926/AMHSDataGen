@@ -4,7 +4,6 @@ import demo.amhsdatagen.model.User;
 import demo.amhsdatagen.model.UserSession;
 import demo.amhsdatagen.service.UserService;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -66,7 +65,7 @@ public class LoginController {
                 User user = userService.registerUser(userId, password);
                 
                 // 자동 로그인 처리
-                UserSession userSession = new UserSession(userId);
+                UserSession userSession = new UserSession(userId, user.getIsSuperuser());
                 session.setAttribute("userSession", userSession);
                 
                 redirectAttributes.addFlashAttribute("success", "새 계정 생성 및 자동 로그인 성공! UserID: " + userId);
@@ -76,7 +75,7 @@ public class LoginController {
                 User user = userService.loginUser(userId, password);
                 
                 // 로그인 성공
-                UserSession userSession = new UserSession(userId);
+                UserSession userSession = new UserSession(userId, user.getIsSuperuser());
                 session.setAttribute("userSession", userSession);
                 
                 redirectAttributes.addFlashAttribute("success", "로그인 성공! UserID: " + userId);
@@ -123,7 +122,7 @@ public class LoginController {
             User user = userService.registerUser(userId, password);
             
             // 자동 로그인 처리
-            UserSession userSession = new UserSession(userId);
+            UserSession userSession = new UserSession(userId, user.getIsSuperuser());
             session.setAttribute("userSession", userSession);
             
             redirectAttributes.addFlashAttribute("success", "회원가입 및 자동 로그인 성공! UserID: " + userId);

@@ -2,12 +2,34 @@ version: '3.8'
 
 services:
   amhs-data-generator:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: amhs-data-generator
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=production
-      - JAVA_OPTS=-Xmx512m -Xms256m
+      - JAVA_OPTS=-Xmx1024m -Xms512m -Dspring.profiles.active=production
+      - TZ=Asia/Seoul
     volumes:
       - ./data:/app/data
+      - ./logs:/app/logs
+      - amhs_data:/app/data/persistent
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - amhs-network
+
+volumes:
+  amhs_data:
+    driver: local
+
+networks:
+  amhs-network:
+    driver: bridge

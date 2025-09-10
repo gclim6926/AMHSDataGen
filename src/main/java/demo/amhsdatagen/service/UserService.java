@@ -102,4 +102,24 @@ public class UserService {
     public Optional<User> findByUserId(String userId) {
         return userRepository.findByUserId(userId);
     }
+
+    /**
+     * 수퍼유저 생성
+     */
+    @Transactional
+    public User createSuperuser(String userId, String password) {
+        if (userRepository.existsByUserId(userId)) {
+            throw new RuntimeException("이미 존재하는 UserID입니다: " + userId);
+        }
+
+        String hashedPassword = hashPassword(password);
+        User user = new User(userId, hashedPassword, true);
+        User savedUser = userRepository.save(user);
+
+        // UserID에 해당하는 AMHS 데이터 테이블 생성 및 초기화
+        userTableService.createUserTable(userId);
+        userTableService.initializeUserTableWithSample(userId);
+
+        return savedUser;
+    }
 }

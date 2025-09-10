@@ -1,37 +1,69 @@
 # Git
 .git
 .gitignore
+.gitattributes
+
+# Documentation
+README.md
+DOCKER_DEPLOYMENT.md
+*.md
 
 # IDE
-.idea
-.vscode
+.idea/
+.vscode/
 *.iml
 *.ipr
 *.iws
-
-# Build artifacts
-build/
-.gradle/
 
 # OS
 .DS_Store
 Thumbs.db
 
+# Build artifacts
+build/
+target/
+out/
+*.jar
+!build/libs/*.jar
+
 # Logs
-*.log
 logs/
+*.log
 
-# Data files (will be created at runtime)
+# Data
 data/
-*.db
-*.trace.db
+*.json
 
-# Documentation
-README.md
-*.md
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
 
-# Render specific
-render.yaml
+# Gradle
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
 
-# Test files
+# Test
 src/test/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Coverage reports
+coverage/
+
+# Backup files
+*.bak
+*.backup

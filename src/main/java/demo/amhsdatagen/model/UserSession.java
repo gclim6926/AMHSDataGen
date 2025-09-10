@@ -5,16 +5,26 @@ import java.time.LocalDateTime;
 public class UserSession {
     private String userId;
     private boolean isLoggedIn;
+    private boolean isSuperuser;
     private LocalDateTime lastActivity;
 
     public UserSession() {
         this.isLoggedIn = false;
+        this.isSuperuser = false;
         this.lastActivity = LocalDateTime.now();
     }
 
     public UserSession(String userId) {
         this.userId = userId;
         this.isLoggedIn = true;
+        this.isSuperuser = false;
+        this.lastActivity = LocalDateTime.now();
+    }
+
+    public UserSession(String userId, boolean isSuperuser) {
+        this.userId = userId;
+        this.isLoggedIn = true;
+        this.isSuperuser = isSuperuser;
         this.lastActivity = LocalDateTime.now();
     }
 
@@ -32,6 +42,14 @@ public class UserSession {
 
     public void setLoggedIn(boolean loggedIn) {
         isLoggedIn = loggedIn;
+    }
+
+    public boolean isSuperuser() {
+        return isSuperuser;
+    }
+
+    public void setSuperuser(boolean superuser) {
+        isSuperuser = superuser;
     }
 
     public LocalDateTime getLastActivity() {

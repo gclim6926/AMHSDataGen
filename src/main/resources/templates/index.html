@@ -16,6 +16,7 @@
                 <div class="menu-item primary" data-view="extract_amhs">📥 Download</div>
                 <div class="menu-item primary" data-view="2d">📊 2D Viewer</div>
                 <div class="menu-item primary" data-view="3d">🎯 3D Viewer</div>
+                <div class="menu-item primary superuser-only" data-view="h2console" th:if="${userSession.isSuperuser()}">🗄️ H2 Console</div>
             </div>
             <div class="menu-group">
                 <div class="menu-item secondary" data-view="layout_seed"><span class="step-number">1</span>Layout Seed</div>

@@ -26,6 +26,9 @@ public class User {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "is_superuser", nullable = false)
+    private Boolean isSuperuser = false;
+
     public User() {}
 
     public User(String userId, String password) {
@@ -33,6 +36,15 @@ public class User {
         this.password = password;
         this.createdAt = LocalDateTime.now();
         this.isActive = true;
+        this.isSuperuser = false;
+    }
+
+    public User(String userId, String password, boolean isSuperuser) {
+        this.userId = userId;
+        this.password = password;
+        this.createdAt = LocalDateTime.now();
+        this.isActive = true;
+        this.isSuperuser = isSuperuser;
     }
 
     public Long getId() {
@@ -81,5 +93,13 @@ public class User {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Boolean getIsSuperuser() {
+        return isSuperuser;
+    }
+
+    public void setIsSuperuser(Boolean isSuperuser) {
+        this.isSuperuser = isSuperuser;
     }
 }

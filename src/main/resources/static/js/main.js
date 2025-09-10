@@ -293,6 +293,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Data AutoGen 클릭 시 순차 실행
             if (viewType === 'data_autogen') {
                 executeSequentialDataGeneration();
+            } else if (viewType === 'h2console') {
+                // H2 Console 클릭 시 새 창에서 열기
+                window.open('/h2console', '_blank');
             } else {
                 hideMenuGuide();
                 hideWelcomeMessage();
