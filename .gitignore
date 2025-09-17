@@ -41,6 +41,7 @@ render.yaml
 
 ### Data files ###
 data/
+!src/main/resources/data/
 *.log
 .DS_Store
 **/.DS_Store
