@@ -150,11 +150,14 @@ function showUDPGeneratorForm() {
                     ${rows}
                   </tbody>
                 </table>
-                <div class="form-actions">
-                    <button type="submit" class="update-btn">update to oht_track_data.log</button>
-                </div>
             </form>
         </div>`;
+    
+    // 기존 고정 버튼들 제거
+    cleanupAllFixedButtons();
+    
+    // 화면 하단에 고정될 OHT 버튼 생성
+    createFixedOhtButton();
 }
 
 async function runUDPGenerator(event) {
@@ -359,11 +362,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     })();
                     break;
-                case 'layout_seed': runLayoutSeed(); break;
-                case 'add_addresses': runAddAddresses(); break;
-                case 'add_lines_endpoint': runAddLines(); break;
-                case 'check': runCheckPy(); break;
-                case 'stations': runStationsPy(); break;
+                case 'layout_seed': 
+                    cleanupAllFixedButtons();
+                    runLayoutSeed(); 
+                    break;
+                case 'add_addresses': 
+                    cleanupAllFixedButtons();
+                    runAddAddresses(); 
+                    break;
+                case 'add_lines_endpoint': 
+                    cleanupAllFixedButtons();
+                    runAddLines(); 
+                    break;
+                case 'check': 
+                    cleanupAllFixedButtons();
+                    runCheckPy(); 
+                    break;
+                case 'stations': 
+                    cleanupAllFixedButtons();
+                    runStationsPy(); 
+                    break;
                 case 'udp_generator': showUDPGeneratorForm(); break;
                 case 'extract_amhs': showExtractPanel(); break;
             }
@@ -372,7 +390,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+// 모든 고정 버튼 정리 함수
+function cleanupAllFixedButtons() {
+    const fixedButtons = document.querySelectorAll('.fixed-button-container');
+    fixedButtons.forEach(button => button.remove());
+}
+
+// OHT 고정 버튼 생성 함수
+function createFixedOhtButton() {
+    const fixedButtonContainer = document.createElement('div');
+    fixedButtonContainer.className = 'fixed-button-container';
+    fixedButtonContainer.id = 'fixed-oht-button';
+    
+    const submitButton = document.createElement('button');
+    submitButton.className = 'fixed-update-btn';
+    submitButton.textContent = '🚀 update to oht_track_data.log';
+    submitButton.onclick = (e) => {
+        e.preventDefault();
+        const form = document.getElementById('udpGeneratorForm');
+        if (form) {
+            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+            form.dispatchEvent(submitEvent);
+        }
+    };
+    
+    fixedButtonContainer.appendChild(submitButton);
+    document.body.appendChild(fixedButtonContainer);
+}
+
 function showExtractPanel() {
+    cleanupAllFixedButtons(); // 기존 고정 버튼들 제거
+    
     const resultArea = document.getElementById('resultArea');
     resultArea.innerHTML = `
         <div class="execution-result">

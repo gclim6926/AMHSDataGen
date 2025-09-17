@@ -32,7 +32,7 @@
     function colorByZ(z) {
       if (z === 6022.0) return '#ff4444';
       if (z === 4822.0) return '#4444ff';
-      if (z === 0.0) return '#ffff44';
+      if (z === 3000.0) return '#44ff44';
       return '#888888';
     }
 
@@ -43,11 +43,11 @@
       if (Math.abs(z1 - z2) > 1e-6) return ['#000000', 3];
       if (z1===6022.0 && z2===6022.0) return ['#ff4444', 1];
       if (z1===4822.0 && z2===4822.0) return ['#4444ff', 1];
-      if (z1===0.0    && z2===0.0)    return ['#ffff44', 1];
-      return ['#44ff44', 1];
+      if (z1===3000.0 && z2===3000.0) return ['#44ff44', 1];
+      return ['#888888', 1];
     }
     const selectedLayers = (layerParam ? layerParam.split(',') : []);
-    const zOf = { z6022: 6022.0, z4822: 4822.0, z0: 0.0 };
+    const zOf = { z6022: 6022.0, z4822: 4822.0, z3000: 3000.0 };
     function layerMatches(pos){
       if (!selectedLayers.length) return true;
       const z = pos && typeof pos.z==='number' ? pos.z : undefined;
@@ -63,7 +63,7 @@
         const bothInSelected = (!selectedLayers.length) || (layerMatches(l.fromPos) && layerMatches(l.toPos));
         if (!bothInSelected) continue;
         if (primary) {
-          const zOf = { z6022: 6022.0, z4822: 4822.0, z0: 0.0 };
+          const zOf = { z6022: 6022.0, z4822: 4822.0, z3000: 3000.0 };
           const pz = zOf[primary];
           const hasPrimary = Math.abs(l.fromPos.z - pz) < 1e-6 || Math.abs(l.toPos.z - pz) < 1e-6;
           if (!hasPrimary) continue;

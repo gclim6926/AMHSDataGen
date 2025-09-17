@@ -43,7 +43,7 @@ public class DataFileService {
         if (!Files.exists(dir)) Files.createDirectories(dir);
         Path input = getInputPath();
         if (!Files.exists(input)) {
-            ClassPathResource sample = new ClassPathResource("data/input.sample.json");
+            ClassPathResource sample = new ClassPathResource("data/input.sample1.json");
             try (InputStream in = sample.getInputStream()) {
                 Files.copy(in, input);
             }
@@ -63,7 +63,7 @@ public class DataFileService {
 
     // H2 전용 모드: 샘플 JSON만 읽기 위한 헬퍼
     public JsonNode readSample() throws IOException {
-        ClassPathResource sample = new ClassPathResource("data/input.sample.json");
+        ClassPathResource sample = new ClassPathResource("data/input.sample1.json");
         try (InputStream in = sample.getInputStream()) {
             return objectMapper.readTree(in);
         }

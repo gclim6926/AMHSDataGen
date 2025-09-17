@@ -46,7 +46,13 @@
             <div class="filter-group">
                 <label><input type="checkbox" value="z6022" checked> z6022</label>
                 <label><input type="checkbox" value="z4822" checked> z4822</label>
-                <label><input type="checkbox" value="z0"> z0</label>
+                <label><input type="checkbox" value="z3000"> z3000</label>
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <h3>Overlap Mode</h3>
+            <div class="filter-group">
                 <label><input type="checkbox" value="Overlap" checked> Overlap</label>
             </div>
         </div>
@@ -103,6 +109,19 @@
             </div>
             
             <div class="menu-guide">
+                <div class="menu-section">
+                    <h3>🏗️ AMHS Spine Layout Design</h3>
+                    <div class="spine-design-guide">
+                        <div class="spine-design-intro">
+                            <div class="spine-design-image">
+                                <img src="/images/A-typical-spine-layout.png" alt="AMHS Spine Layout 구조도" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; margin: 10px 0;">
+                            </div>
+                            <p><strong>AMHS(Automated Material Handling System)</strong>의 3층 구조 Spine Layout을 설계합니다. 각 구성 요소의 좌표를 입력하여 OHT(Overhead Hoist Transport) 시스템의 이동 경로를 정의합니다.</p>
+                            <p><strong>생산 공정의 전형적인 레이아웃구조</strong>로, 중앙 스파인(척추 모양의 주 통로)을 중심으로 양측에 여러 베이(작업 구역)가 분기되어 배치된 형태로 복잡도에 따라 추가 스파인과 베이를 구성할 수 있습니다. 이 설계는 자동화된 레일 시스템과 함께 공정에 필요한 재료 이동을 효율적으로 지원합니다.</p>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="menu-section">
                     <h3>📋 Top 메뉴</h3>
                     <div class="menu-group-desc">
@@ -203,7 +222,11 @@
                     <div class="filter-guide">
                         <div class="filter-item">
                             <h4>Layer Filter</h4>
-                            <p>시각화할 레이어를 선택합니다. z6022, z4822, z0 레이어와 Overlap 모드를 설정할 수 있습니다.</p>
+                            <p>시각화할 레이어를 선택합니다. z6022 (상층), z4822 (중층), z3000 (하층) 레이어를 선택할 수 있습니다.</p>
+                        </div>
+                        <div class="filter-item">
+                            <h4>Overlap Mode</h4>
+                            <p>모든 레이어를 겹쳐서 표시하는 모드입니다. 체크하면 선택된 레이어들이 하나의 뷰에서 함께 표시됩니다.</p>
                         </div>
                         <div class="filter-item">
                             <h4>Component Filter</h4>

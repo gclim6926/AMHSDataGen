@@ -1,147 +1,205 @@
-# AMHSDataGen
+# 🏭 AMHS Data Generator
 
-Spring Boot 기반 AMHS 데이터 생성/레이아웃 시각화 도구. 기존 Python 스크립트를 Java(Spring MVC) + Thymeleaf + Plotly.js로 이식/확장했습니다.
+**현대적인 웹 기반 AMHS(Automated Material Handling System) 레이아웃 설계 및 시각화 도구**
 
-## 주요 기능
+Spring Boot와 현대적인 웹 기술을 활용하여 복잡한 AMHS 레이아웃을 직관적으로 설계하고 시각화할 수 있는 통합 솔루션입니다.
 
-- Layout Seed: `data/input.json` 확인/수정
-- add Addresses/Lines: 주소·라인 자동 생성 및 연결
-- Checker: 중복/겹침 라인 점검 및 정리, 레이아웃 저장
-- add Stations: 라인 구간을 분할해 스테이션 생성
-- OHT Track Maker: 다중 OHT 경로(UDP 트랙) 동시 생성
-- 2D/3D Viewer: Plotly.js로 레이아웃 및 OHT 시뮬레이션 시각화
+## ✨ 주요 기능
 
-## 빠른 시작
+### 🎨 **스마트 샘플 편집기 (Layout Seed)**
+- **3가지 프리셋 템플릿**: Complex (3층), Extended (2층), Basic (1층) 구조
+- **직관적인 카드 UI**: 이미지 클릭만으로 샘플 로드
+- **실시간 편집**: 웹 기반 폼 에디터로 즉시 수정 가능
+- **자동 저장**: 데이터베이스 연동으로 작업 내용 자동 보존
 
-- 요구사항: JDK 21+, Gradle Wrapper 포함
-- 실행
-  - 개발 실행: `./gradlew bootRun`
-  - 빌드: `./gradlew build -x test`
-  - 접속: 브라우저에서 `http://localhost:8080/`
+### 📊 **고급 시각화 엔진**
+- **3D 인터랙티브 뷰어**: Plotly.js 기반 몰입감 있는 3D 시각화
+- **레이어 필터링**: z6022(상층), z4822(중층), z3000(하층) 개별 제어
+- **색상 코딩 시스템**: 레이어별 직관적 구분 (빨강, 파랑, 밝은 녹색)
+- **Overlap 모드**: 모든 레이어를 통합하여 전체 구조 파악
 
-## Render.com 배포
+### 💾 **강력한 데이터 관리**
+- **H2 인메모리 데이터베이스**: 빠른 응답속도와 세션 격리
+- **사용자별 워크스페이스**: 개별 작업 환경 제공
+- **REST API**: 완전한 CRUD 지원으로 확장성 보장
+- **실시간 동기화**: 프론트엔드-백엔드 실시간 데이터 연동
 
-### 자동 배포 설정
-1. GitHub 저장소에 코드 푸시
-2. Render.com에서 "New Web Service" 선택
-3. GitHub 저장소 연결
-4. 설정:
-   - **Build Command**: `./gradlew build -x test`
-   - **Start Command**: `java -jar build/libs/AMHSDataGen-0.0.1-SNAPSHOT.jar`
-   - **Environment**: Java
-   - **Java Version**: 21
+### 🔧 **추가 도구들**
+- **Address/Line Generator**: 자동 주소 및 라인 생성
+- **Layout Checker**: 중복/겹침 검증 및 정리
+- **Station Manager**: 라인 구간 분할 및 스테이션 생성
+- **OHT Track Maker**: 다중 OHT 경로 동시 생성
+- **UDP Generator**: OHT 시뮬레이션 데이터 생성
 
-### 환경 변수 설정
-- `SPRING_PROFILES_ACTIVE`: `production`
-- `JAVA_OPTS`: `-Xmx512m -Xms256m`
+## 🚀 빠른 시작
 
-### 배포 후 확인사항
-- 애플리케이션이 정상적으로 시작되는지 확인
-- 웹 인터페이스 접근 가능 여부 확인
-- 데이터 생성 기능 정상 작동 확인
+### 요구사항
+- **Java 21+** (OpenJDK 권장)
+- **Gradle** (Wrapper 포함)
+- **현대적인 웹 브라우저** (Chrome, Firefox, Safari, Edge)
 
-## 디렉토리 구조(요약)
-
-```text
-AMHSDataGen/
-  ├─ src/main/java/demo/amhsdatagen
-  │   ├─ controller/  # MVC Controller 및 REST API 엔드포인트
-  │   ├─ model/       # 데이터 모델(POJO) - Address, Line, Position 등
-  │   ├─ service/     # 비즈니스 로직 - Generator·Checker·Stations·UDP 등
-  │   ├─ config/      # 초기화/설정 구성 (StartupInitializer 등)
-  │   └─ DataGenApplication.java
-  ├─ src/main/resources
-  │   ├─ templates/   # Thymeleaf 템플릿 (index, viewer2d, viewer3d, 404 등)
-  │   ├─ static/      # JS/CSS(예: static/js/actions.js)
-  │   └─ application.properties
-  ├─ data/            # 변경/결과 데이터 및 로그: input.json, output.json, layout.json, *.log
-  ├─ build.gradle
-  └─ README.md
-```
-
-## 설정(application.properties)
-
-- `spring.application.name=layoutviz`
-- `app.data.dir=data`
-- `app.files.input=input.json`
-- `app.files.output=output.json`
-- `app.files.input-sample=input.sample.json`
-- `app.files.check-log=check.log`
-- `app.files.udp-log=output_oht_track_data.log`
-- `app.files.layout=layout.json`
-
-모든 파일은 기본적으로 프로젝트 루트의 `data/` 하위에 생성·갱신됩니다.
-
-## 실행 방법(웹 UI)
-
-- 메인: `http://localhost:8080/`
-  - 좌측 메뉴에서 각 기능 실행
-  - 2D/3D Viewer는 새 창으로 열리며, Layer/Component 필터 적용 가능
-- 2D Viewer: `/viewer2d?layers=z6022,z4822&overlap=1&comps=lines,addresses,stations,ohts`
-- 3D Viewer: `/viewer3d?layers=z6022,z4822&overlap=1&primary=z4822&comps=lines,addresses,stations,ohts`
-
-## REST API(요약)
-
-- `POST /api/run-generate` — 주소/라인 생성
-- `POST /api/run-add-lines` — 미연결 주소/엔드포인트 연결
-- `POST /api/run-check` — 데이터 무결성 점검 및 정리
-- `POST /api/run-stations` — 스테이션 생성
-- `POST /api/run-udp-generator` — 단일 OHT 트랙 생성
-- `POST /api/run-udp-generator-bulk` — 다중 OHT 트랙 동시 생성
-- `GET  /api/get-input-data` — 입력(json) 조회
-- `POST /api/update-input-json` — 입력(json) 갱신
-- `GET  /api/get-output-json` — 출력(json) 조회
-- `GET  /api/get-udp-log` — OHT 트랙 로그 조회
-
-## OHT Track Maker
-
-- UI: 메뉴의 “OHT Track Maker” → OHT_0 ~ OHT_9 기본값 제공
-- 체크된 OHT만 대상으로, 모든 OHT가 같은 틱에서 동시에 다음 주소로 이동하는 로그를 생성합니다.
-- 로그 파일: `data/output_oht_track_data.log`
-- 로그 포맷 예시(각 라인의 MCP/OHT 표기):
-
-```text
-[2025-08-25 18:02:34.828]IP:10.10.10.1, Port=3600, Descrption:DT, Message=2,OHT1,V00001,1,0,0000,1,100010,0,100451,2,1,AAAA0000,100110,00000000,0000, ,0,101,0
-```
-
-- “Message=2,OHT1,” 형태로 OHT 식별자를 기록합니다.
-
-## 시각화(2D/3D)
-
-- Plotly.js를 사용해 브라우저에서 렌더링
-- Layer 필터: `z0`, `z4822`, `z6022` 선택, Overlap 모드 지원
-- Component 필터: `lines`, `addresses`, `stations`, `ohts`
-- OHT: 로그 기반 애니메이션, 2D/3D 각각 다른 마커 크기
-- 2D는 초기 데이터 범위로 축을 고정하여 OHT가 가장자리로 이동해도 스케일 변화가 없도록 설정
-
-## 내부 로직(요약)
-
-- Generator: 입력(JSON)을 기반으로 주소/라인 생성, 레이어별 처리
-- Line Endpoint: 미사용 주소·엔드포인트 연결, 최근접 탐색 및 중복/교차 방지
-- Checker: 중복 주소/라인, 라인 겹침 검사 및 정리, 리포트/로그 작성
-- Stations: 라인을 구간으로 나눠 선택/배치, 스테이션 엔티티 생성 및 출력 JSON 반영
-- UDP Generator: 주소 그래프 구성 → BFS 최단 경로 → OHT 트랙 로그 생성(동시 틱)
-
-## 개발 팁
-
-- 빌드: `./gradlew build -x test`
-- 실행: `./gradlew bootRun`
-- 로그 확인: `data/check.log`, `data/output_oht_track_data.log`
-- 데이터 초기화: 필요 시 `data/` 내 파일 교체 또는 `resources/data/input.sample.json` 사용
-
-## GitHub
-
-- 원격 저장소(HTTPS): `https://github.com/gclim6926/AMHSDataGen.git`
-- 연결/푸시 예시:
-
+### 로컬 개발 환경
 ```bash
-git init
-git add -A && git commit -m "Initial import"
-git branch -M main
-git remote add origin https://github.com/gclim6926/AMHSDataGen.git
-git push -u origin main
+# 저장소 클론
+git clone <repository-url>
+cd AMHSDataGen_bu0910
+
+# 개발 서버 실행
+./gradlew bootRun
+
+# 브라우저에서 접속
+open http://localhost:8080
 ```
 
-## 라이선스
+### 프로덕션 빌드
+```bash
+# 일반 빌드
+./gradlew build -x test
 
-- 프로젝트에 맞는 라이선스를 선택해 `LICENSE` 파일로 추가하세요. (예: MIT)
+# 최적화된 프로덕션 빌드
+./gradlew productionBuild
+
+# 배포 스크립트 실행
+./deploy.sh production
+```
+
+## 🐳 Docker 배포
+
+### Docker 이미지 빌드
+```bash
+# 이미지 빌드
+docker build -t amhs-datagen:latest .
+
+# 컨테이너 실행
+docker run -p 8080:8080 amhs-datagen:latest
+```
+
+### Docker Compose
+```bash
+# Docker Compose로 실행
+docker-compose up -d
+```
+
+## ☁️ 클라우드 배포
+
+### Render.com 배포
+1. **GitHub 저장소 연결**
+2. **빌드 설정**:
+   - Build Command: `./gradlew productionBuild`
+   - Start Command: `java -jar build/libs/AMHSDataGen-production.jar`
+3. **환경 변수**: `SPRING_PROFILES_ACTIVE=production`
+
+### Heroku 배포
+```bash
+# Heroku CLI 설치 후
+heroku create your-app-name
+heroku config:set SPRING_PROFILES_ACTIVE=production
+git push heroku main
+```
+
+## 📁 프로젝트 구조
+
+```
+AMHSDataGen_bu0910/
+├── src/main/
+│   ├── java/demo/amhsdatagen/
+│   │   ├── controller/          # REST API 컨트롤러
+│   │   ├── service/            # 비즈니스 로직
+│   │   ├── model/              # 데이터 모델
+│   │   └── repository/         # 데이터 액세스
+│   └── resources/
+│       ├── static/
+│       │   ├── css/           # 모던 스타일시트
+│       │   ├── js/            # 최적화된 JavaScript
+│       │   └── images/        # 샘플 이미지
+│       ├── templates/         # Thymeleaf 템플릿
+│       └── data/             # 샘플 JSON 파일
+├── build.gradle              # 빌드 설정
+├── Dockerfile                # Docker 설정
+├── docker-compose.yml        # Docker Compose
+└── deploy.sh                 # 배포 스크립트
+```
+
+## 🎯 사용 방법
+
+### 1. 샘플 선택
+- **Layout Seed** 메뉴 클릭
+- 원하는 샘플 카드 클릭 (Complex/Extended/Basic)
+- 자동으로 에디터에 로드 및 DB 저장
+
+### 2. 레이아웃 편집
+- 웹 폼에서 JSON 데이터 직접 편집
+- **"update to layout_seed.input"** 버튼으로 저장
+
+### 3. 시각화
+- **2D Viewer** 또는 **3D Viewer** 선택
+- 레이어 필터로 원하는 층만 표시
+- Overlap 모드로 전체 구조 확인
+
+### 4. 데이터 생성
+- **Add Addresses**: 주소 데이터 자동 생성
+- **Add Lines**: 라인 연결 정보 생성
+- **Stations**: 스테이션 배치 최적화
+
+## 🔧 기술 스택
+
+### Backend
+- **Spring Boot 3.4.9** - 현대적인 Java 웹 프레임워크
+- **Spring MVC** - RESTful API 구축
+- **Spring Data JPA** - 데이터 액세스 추상화
+- **H2 Database** - 인메모리 데이터베이스
+- **Jackson** - JSON 처리
+
+### Frontend
+- **Thymeleaf** - 서버사이드 템플릿 엔진
+- **Plotly.js** - 고성능 시각화 라이브러리
+- **Modern CSS3** - CSS Variables, Flexbox, Grid
+- **Vanilla JavaScript** - 최적화된 클라이언트 코드
+
+### DevOps
+- **Gradle** - 빌드 자동화
+- **Docker** - 컨테이너화
+- **Multi-stage Build** - 최적화된 이미지
+
+## 📊 성능 최적화
+
+- **CSS Variables**: 일관된 디자인 시스템
+- **JavaScript 모듈화**: 유지보수성 향상
+- **AbortController**: 요청 타임아웃 처리
+- **Server Compression**: Gzip 압축 활성화
+- **Static Resource Caching**: 브라우저 캐싱 최적화
+
+## 🛡️ 보안 기능
+
+- **Non-root Container**: Docker 보안 강화
+- **Input Validation**: XSS 방지
+- **CORS 설정**: 크로스 오리진 요청 제어
+- **Session Management**: 사용자별 데이터 격리
+
+## 📝 API 문서
+
+애플리케이션 실행 후 Swagger UI에서 API 문서 확인:
+- **로컬**: http://localhost:8080/swagger-ui.html
+- **프로덕션**: https://your-domain.com/swagger-ui.html
+
+## 🤝 기여하기
+
+1. Fork 프로젝트
+2. Feature 브랜치 생성 (`git checkout -b feature/AmazingFeature`)
+3. 변경사항 커밋 (`git commit -m 'Add some AmazingFeature'`)
+4. 브랜치에 Push (`git push origin feature/AmazingFeature`)
+5. Pull Request 생성
+
+## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
+
+## 📞 지원
+
+- **이슈 리포트**: GitHub Issues
+- **문의사항**: 프로젝트 관리자에게 연락
+- **문서**: 프로젝트 Wiki 참조
+
+---
+
+**AMHS Data Generator**로 더 효율적이고 직관적인 AMHS 레이아웃 설계를 경험해보세요! 🚀

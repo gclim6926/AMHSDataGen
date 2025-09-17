@@ -42,7 +42,7 @@ public class InputGeneratorService {
         List<LineData> lines = new ArrayList<>();
 
         System.out.println("🔄 Processing layer crossover connections...");
-        // Layer crossover connections (z0-4822, z4822-6022) first
+        // Layer crossover connections (z3000-4822, z4822-6022) first
         addressId = processLayerCrossover(root.path("layer_crossover"), addresses, lines, addressId, lineId);
         lineId = GenerationConfig.LINE_ID_START + lines.size();
         System.out.println("✅ Layer crossover processing completed - Addresses: " + addresses.size() + ", Lines: " + lines.size());
@@ -57,6 +57,11 @@ public class InputGeneratorService {
         addressId = processLayer(root.path("z4822"), 4822.0, addresses, lines, addressId, lineId);
         lineId = GenerationConfig.LINE_ID_START + lines.size();
         System.out.println("✅ z4822 layer processing completed - Addresses: " + addresses.size() + ", Lines: " + lines.size());
+
+        System.out.println("🏭 Processing z3000 layer (bottom floor)...");
+        addressId = processLayer(root.path("z3000"), 3000.0, addresses, lines, addressId, lineId);
+        lineId = GenerationConfig.LINE_ID_START + lines.size();
+        System.out.println("✅ z3000 layer processing completed - Addresses: " + addresses.size() + ", Lines: " + lines.size());
 
         // Save output (DB)
         ObjectNode output = objectMapper.createObjectNode();
@@ -115,7 +120,7 @@ public class InputGeneratorService {
                                        long currentAddressId,
                                        long currentLineIdStart) {
         if (lcNode == null || lcNode.isMissingNode()) return currentAddressId;
-        currentAddressId = processConnectionArray(lcNode.path("z0-4822"), addresses, lines, currentAddressId);
+        currentAddressId = processConnectionArray(lcNode.path("z3000-4822"), addresses, lines, currentAddressId);
         currentAddressId = processConnectionArray(lcNode.path("z4822-6022"), addresses, lines, currentAddressId);
         return currentAddressId;
     }
@@ -171,6 +176,12 @@ public class InputGeneratorService {
 
         // local_loop_for_layer
         currentAddressId = processLinesArray(layerNode.path("local_loop_for_layer"), zValue, addresses, lines, currentAddressId, currentLineId);
+
+        // shortcut 처리
+        JsonNode shortcutNode = layerNode.path("shortcut");
+        if (!shortcutNode.isMissingNode()) {
+            currentAddressId = processShortcuts(shortcutNode, zValue, addresses, currentAddressId);
+        }
 
         return currentAddressId;
     }
@@ -326,5 +337,36 @@ public class InputGeneratorService {
         public int addressCount;
         public int lineCount;
         public String outputPath;
+    }
+
+    /**
+     * shortcut 노드의 모든 하위 항목들을 처리하여 개별 포인트들을 addresses로 추가
+     */
+    private long processShortcuts(JsonNode shortcutNode, double zValue, 
+                                  List<AddressData> addresses, long currentAddressId) {
+        Iterator<String> fieldNames = shortcutNode.fieldNames();
+        while (fieldNames.hasNext()) {
+            String shortcutType = fieldNames.next();
+            JsonNode shortcutArray = shortcutNode.path(shortcutType);
+            
+            System.out.println("🔗 Processing shortcut type: " + shortcutType + " at z=" + zValue);
+            
+            if (shortcutArray.isArray()) {
+                for (JsonNode pointNode : shortcutArray) {
+                    if (pointNode.isArray() && pointNode.size() >= 2) {
+                        double x = pointNode.get(0).asDouble();
+                        double y = pointNode.get(1).asDouble();
+                        
+                        AddressData shortcutAddr = new AddressData(currentAddressId, currentAddressId, 
+                                "SHORTCUT_" + shortcutType.toUpperCase() + "_" + currentAddressId, 
+                                new PositionData(round1(x), round1(y), zValue));
+                        addresses.add(shortcutAddr);
+                        currentAddressId++;
+                    }
+                }
+            }
+        }
+        
+        return currentAddressId;
     }
 }

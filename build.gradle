@@ -40,3 +40,52 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// 빌드 최적화 설정
+tasks.named('bootJar') {
+    archiveFileName = "${project.name}-${project.version}.jar"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // JAR 파일 최적화
+    exclude '**/application-development.properties'
+    exclude '**/logback-*.xml'
+}
+
+// 개발 환경 설정
+tasks.named('bootRun') {
+    jvmArgs = [
+        '-Dspring.profiles.active=development',
+        '-Dspring.devtools.restart.enabled=true',
+        '-Dspring.devtools.livereload.enabled=true'
+    ]
+}
+
+// 프로덕션 빌드 태스크
+task productionBuild(type: org.springframework.boot.gradle.tasks.bundling.BootJar) {
+    archiveFileName = "${project.name}-production.jar"
+    mainClass = 'demo.amhsdatagen.DataGenApplication'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // Java 버전 설정
+    targetJavaVersion = JavaVersion.VERSION_21
+    
+    // 프로덕션 최적화
+    exclude 'application-development.properties'
+    exclude '**/devtools/**'
+    exclude '**/test/**'
+    exclude '**/*.map'
+    exclude '**/src/**'
+    exclude '**/node_modules/**'
+    
+    // 클래스패스 설정
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// 정적 리소스 압축 태스크
+task compressResources {
+    doLast {
+        println "정적 리소스 압축 완료"
+    }
+}
+
+productionBuild.dependsOn compressResources

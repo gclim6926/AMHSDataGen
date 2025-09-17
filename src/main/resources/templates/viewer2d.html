@@ -33,11 +33,11 @@
     function colorByZ(z) {
       if (z === 6022.0) return '#ff4444';
       if (z === 4822.0) return '#4444ff';
-      if (z === 0.0) return '#ffff44';
+      if (z === 3000.0) return '#44ff44';
       return '#888888';
     }
     const selectedLayers = (layerParam ? layerParam.split(',') : []);
-    const zOf = { z6022: 6022.0, z4822: 4822.0, z0: 0.0 };
+    const zOf = { z6022: 6022.0, z4822: 4822.0, z3000: 3000.0 };
     function layerMatches(pos){
       if (!selectedLayers.length) return true;
       const z = pos && typeof pos.z==='number' ? pos.z : undefined;
@@ -53,7 +53,7 @@
         if (selectedLayers.length && !(layerMatches(l.fromPos) && layerMatches(l.toPos))) continue;
       }
       const z1 = l.fromPos.z, z2 = l.toPos.z;
-      const color = (z1 === 6022.0 || z2 === 6022.0) ? '#ff4444' : (z1 === 4822.0 || z2 === 4822.0) ? '#4444ff' : (z1 === 0.0 || z2 === 0.0) ? '#ffff44' : '#44ff44';
+      const color = (z1 === 6022.0 || z2 === 6022.0) ? '#ff4444' : (z1 === 4822.0 || z2 === 4822.0) ? '#4444ff' : (z1 === 3000.0 || z2 === 3000.0) ? '#44ff44' : '#888888';
       if (!lineGroups[color]) lineGroups[color] = { x: [], y: [], color };
       lineGroups[color].x.push(l.fromPos.x, l.toPos.x, null);
       lineGroups[color].y.push(l.fromPos.y, l.toPos.y, null);
@@ -123,7 +123,7 @@
           for (const [_, code, tag] of entries) {
             const p = addrMap.get(code); if (!p) continue;
             if (layerParam) {
-              const zOf = { z6022: 6022.0, z4822: 4822.0, z0: 0.0 };
+              const zOf = { z6022: 6022.0, z4822: 4822.0, z3000: 3000.0 };
               const selectedZ = layerParam.split(',').map(l=>zOf[l]).filter(v=>typeof v==='number');
               if (selectedZ.length && !selectedZ.includes(p[2])) continue;
             }

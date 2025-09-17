@@ -87,9 +87,9 @@ public class Visualize3DService {
                         include = true;
                         layer = "z4822";
                     }
-                    if (showOverlap && Math.abs(z - 0.0) < 0.1) {
+                    if (showOverlap && Math.abs(z - 3000.0) < 0.1) {
                         include = true;
-                        layer = "z0";
+                        layer = "z3000";
                     }
                     
                     if (include) {
@@ -158,9 +158,9 @@ public class Visualize3DService {
                         include = true;
                         layer = "z4822";
                     }
-                    if (showOverlap && Math.abs(z - 0.0) < 0.1) {
+                    if (showOverlap && Math.abs(z - 3000.0) < 0.1) {
                         include = true;
-                        layer = "z0";
+                        layer = "z3000";
                     }
                     
                     if (include) {

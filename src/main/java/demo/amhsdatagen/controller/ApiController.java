@@ -14,6 +14,7 @@ import demo.amhsdatagen.service.Visualize2DService;
 import demo.amhsdatagen.service.Visualize3DService;
 import demo.amhsdatagen.service.UserTableService;
 import demo.amhsdatagen.service.ResetService;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -598,8 +599,8 @@ public class ApiController {
         }
     }
 
-    @PostMapping("/update-input-json")
-    public ResponseEntity<Map<String, Object>> updateInputJson(@RequestBody JsonNode input, HttpSession session) {
+    @GetMapping("/get-sample-data/{sampleNumber}")
+    public ResponseEntity<Map<String, Object>> getSampleData(@PathVariable int sampleNumber, HttpSession session) {
         Map<String, Object> res = new HashMap<>();
         try {
             UserSession userSession = (UserSession) session.getAttribute("userSession");
@@ -609,17 +610,81 @@ public class ApiController {
                 return ResponseEntity.badRequest().body(res);
             }
             
+            System.out.println("🔍 get-sample-data API 호출됨 - 샘플 번호: " + sampleNumber);
+            
+            // 유효한 샘플 번호인지 확인
+            if (sampleNumber < 1 || sampleNumber > 3) {
+                res.put("success", false);
+                res.put("message", "유효하지 않은 샘플 번호입니다. (1-3)");
+                return ResponseEntity.badRequest().body(res);
+            }
+            
+            String fileName = "data/input.sample" + sampleNumber + ".json";
+            ClassPathResource sample = new ClassPathResource(fileName);
+            
+            if (!sample.exists()) {
+                res.put("success", false);
+                res.put("message", "샘플 파일을 찾을 수 없습니다: " + fileName);
+                return ResponseEntity.badRequest().body(res);
+            }
+            
+            JsonNode data = objectMapper.readTree(sample.getInputStream());
+            res.put("success", true);
+            res.put("data", data);
+            res.put("sampleNumber", sampleNumber);
+            res.put("fileName", fileName);
+            
+            System.out.println("✅ 샘플 데이터 로드 성공: " + fileName);
+            System.out.println("📊 데이터 크기: " + data.toString().length() + " 바이트");
+            
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            System.err.println("💥 샘플 데이터 로드 실패: " + e.getMessage());
+            res.put("success", false);
+            res.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+    }
+
+    @PostMapping("/update-input-json")
+    public ResponseEntity<Map<String, Object>> updateInputJson(@RequestBody JsonNode input, HttpSession session) {
+        Map<String, Object> res = new HashMap<>();
+        try {
+            System.out.println("🔍 update-input-json API 호출됨");
+            
+            UserSession userSession = (UserSession) session.getAttribute("userSession");
+            if (userSession == null || !userSession.isLoggedIn()) {
+                System.out.println("❌ 인증 실패: 로그인되지 않은 사용자");
+                res.put("success", false);
+                res.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.badRequest().body(res);
+            }
+            
             String userId = userSession.getUserId();
+            System.out.println("👤 사용자 ID: " + userId);
+            
+            // 받은 데이터 분석
+            System.out.println("📊 받은 JSON 데이터 분석:");
+            System.out.println("  - 최상위 키들: " + input.fieldNames().toString());
+            System.out.println("  - JSON 크기: " + input.toString().length() + " 바이트");
+            
             String json = input.toPrettyString();
+            System.out.println("💾 DB 저장 시작 - layout_seed.input");
             userTableService.saveToUserTable(userId, "layout_seed.input", json);
+            System.out.println("✅ layout_seed.input 저장 완료");
             
             // output 데이터도 초기화 (빈 객체로 시작)
             ObjectNode outputNode = objectMapper.createObjectNode();
+            System.out.println("🔄 layout_seed.output 초기화 시작");
             userTableService.saveToUserTable(userId, "layout_seed.output", outputNode.toPrettyString());
+            System.out.println("✅ layout_seed.output 초기화 완료");
             
             res.put("success", true);
+            System.out.println("🎉 update-input-json API 성공적으로 완료");
             return ResponseEntity.ok(res);
         } catch (Exception e) {
+            System.err.println("💥 update-input-json API 오류: " + e.getMessage());
+            e.printStackTrace();
             res.put("success", false);
             res.put("message", e.getMessage());
             return ResponseEntity.internalServerError().body(res);
