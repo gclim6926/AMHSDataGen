@@ -51,9 +51,9 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Set environment variables for production
+# Set environment variables for production (optimized for low-memory environments)
 ENV SPRING_PROFILES_ACTIVE=production
-ENV JAVA_OPTS="-Xmx1g -Xms512m -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m -Djava.security.egd=file:/dev/./urandom"
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
