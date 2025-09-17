@@ -90,19 +90,87 @@ function executeSequentialDataGeneration() {
         
         showStatus(`실행 중: ${menu.name} (${currentIndex + 1}/${sequentialMenus.length})`, 'info');
         
-        // 실제 메뉴 실행 로직
-        executeAction(menu.id);
-        
-        currentIndex++;
-        
-        // 2초 후 다음 단계로 진행
-        setTimeout(executeNext, 2000);
+        // 실제 메뉴 실행 로직 (비동기로 처리)
+        executeActionAsync(menu.id)
+            .then(() => {
+                currentIndex++;
+                // 1초 후 다음 단계로 진행 (완료 후 적절한 간격)
+                setTimeout(executeNext, 1000);
+            })
+            .catch(error => {
+                hideLoading();
+                showStatus(`❌ ${menu.name} 실행 중 오류 발생: ${error.message}`, 'error');
+            });
     }
     
     executeNext();
 }
 
-// 메뉴 실행 함수
+// 비동기 메뉴 실행 함수
+async function executeActionAsync(menuType) {
+    return new Promise((resolve, reject) => {
+        // Layout Seed는 API 호출 없이 직접 처리
+        if (menuType === 'layout_seed') {
+            if (typeof runLayoutSeed === 'function') {
+                runLayoutSeed();
+                showStatus('Layout Seed 초기화 완료', 'success');
+                resolve();
+            } else {
+                reject(new Error('Layout Seed 초기화 실패'));
+            }
+            return;
+        }
+        
+        // 다른 메뉴들은 API 호출
+        const apiEndpoints = {
+            'add_addresses': '/api/run-generate',
+            'add_lines_endpoint': '/api/run-add-lines',
+            'stations': '/api/run-stations',
+            'check': '/api/run-check',
+            'udp_generator': '/api/run-udp-generator'
+        };
+        
+        const endpoint = apiEndpoints[menuType];
+        if (!endpoint) {
+            reject(new Error(`알 수 없는 메뉴 타입: ${menuType}`));
+            return;
+        }
+        
+        const body = menuType === 'udp_generator' ? JSON.stringify(
+            getOHTDefaultValues().map((addresses, idx) => ({
+                startAddress: addresses[0],
+                destinationAddress: addresses[1],
+                ohtId: `OHT_${idx}`
+            }))
+        ) : undefined;
+        
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: body
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showStatus(`✅ ${menuType} 완료: ${data.message}`, 'success');
+                
+                // UDP Generator 실행 후 자동으로 OHT 로그 업데이트
+                if (menuType === 'udp_generator') {
+                    updateOhtLogToFile();
+                }
+                
+                resolve(data);
+            } else {
+                reject(new Error(`${menuType} 실패: ${data.message}`));
+            }
+        })
+        .catch(error => {
+            reject(error);
+        });
+    });
+}
+
+// 기존 동기 메뉴 실행 함수 (개별 메뉴 클릭용)
 function executeAction(menuType) {
     const statusArea = document.getElementById('statusArea');
     const resultArea = document.getElementById('resultArea');
