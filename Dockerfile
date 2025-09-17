@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM openjdk:21-jdk-slim AS builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
 
 # Install required packages
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
@@ -22,7 +22,7 @@ COPY src/ src/
 RUN ./gradlew productionBuild -x test --no-daemon
 
 # Final stage - use JRE for smaller image
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre-jammy
 
 # Install required packages and create user
 RUN apt-get update && \
